@@ -231,9 +231,10 @@ The same table applies to an enum case's associated values.
   `@Fakable` to it, or pass an explicit value at the call site.
 - Types are matched by their written spelling, so a type alias for `String`
   resolves to `.fake()` rather than `""`.
-- A generic enum whose every case carries a generic associated value is an
-  error: `fake()` takes no parameters, so there is nowhere to get the value
-  from. Give the enum a case without associated values.
+- A generic enum is an error only when *every* case carries a generic
+  associated value: `fake()` takes no parameters, so there is nowhere to get the
+  value from. A case with no associated values, or one whose values are not
+  generic, is used instead.
 - There is currently no way to change the `#if DEBUG` guard.
 
 ## Troubleshooting

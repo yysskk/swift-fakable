@@ -27,8 +27,8 @@ enum FakableDiagnostic: String, DiagnosticMessage {
             "'@Fakable' generates nothing for an enum with no cases"
         case .unwritableAssociatedValue:
             """
-            '@Fakable' cannot write a value for a generic associated value; \
-            add a case without associated values
+            '@Fakable' cannot write a value for any case of this enum; \
+            every case carries a generic associated value
             """
         }
     }

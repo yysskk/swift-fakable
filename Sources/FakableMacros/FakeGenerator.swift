@@ -61,24 +61,40 @@ enum FakeGenerator {
             }
         }
 
-        // If no case without associated values, use the first case with values
+        // Otherwise take the first case whose values can all be written. When
+        // none can be, hand back the first candidate anyway so the caller has
+        // something to report the failure against.
         let genericParameterNames = enumDecl.genericParameterClause.parameterNames
+        var firstCandidate: EnumCaseInfo?
 
         for member in members {
-            if let caseDecl = member.decl.as(EnumCaseDeclSyntax.self),
-                let element = caseDecl.elements.first,
-                let parameterClause = element.parameterClause
-            {
-                let parameters = enumCaseParameters(
-                    of: parameterClause,
-                    genericParameterNames: genericParameterNames
+            guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else {
+                continue
+            }
+
+            for element in caseDecl.elements {
+                guard let parameterClause = element.parameterClause else {
+                    continue
+                }
+
+                let candidate = EnumCaseInfo(
+                    name: element.name.text,
+                    parameters: enumCaseParameters(
+                        of: parameterClause,
+                        genericParameterNames: genericParameterNames
+                    )
                 )
-                return EnumCaseInfo(name: element.name.text, parameters: parameters)
+
+                if candidate.parameters.allSatisfy({ $0.value != nil }) {
+                    return candidate
+                }
+
+                firstCandidate = firstCandidate ?? candidate
             }
         }
 
         // Empty enum
-        return nil
+        return firstCandidate
     }
 
     private static func enumCaseParameters(

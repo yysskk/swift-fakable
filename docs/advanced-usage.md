@@ -213,19 +213,25 @@ is unaffected. Types that merely involve a generic parameter without needing a
 value of it — `[T]`, `T?` — keep their usual defaults of `[]` and `nil`.
 
 For enums the same situation has no answer, because `fake()` takes no
-parameters. A generic enum is fine as long as it has a case without associated
-values:
+parameters. A generic enum is fine as long as some case can be written — one
+with no associated values, or one whose values are not generic:
 
 ```swift
 @Fakable
 enum Either<T> {
     case some(T)
-    case none      // fake() == .none
+    case none          // fake() == .none
+}
+
+@Fakable
+enum Wrapped<T> {
+    case value(T)
+    case count(Int)    // fake() == .count(0)
 }
 ```
 
-When every case carries a generic associated value, the macro reports an error
-rather than generating something that cannot compile.
+Only when *every* case carries a generic associated value does the macro report
+an error, rather than generating something that cannot compile.
 
 ## Access levels
 

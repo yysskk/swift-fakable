@@ -116,6 +116,12 @@ enum TestEither<T: Equatable>: Equatable {
     case none
 }
 
+@Fakable
+enum TestWrapped<T: Equatable>: Equatable {
+    case value(T)
+    case count(Int)
+}
+
 // Runtime tests
 
 @Suite("Fakable Runtime Tests")
@@ -369,5 +375,10 @@ struct FakableRuntimeTests {
     @Test("Generic enum returns the case without associated values")
     func testGenericEnum() {
         #expect(TestEither<Int>.fake() == .none)
+    }
+
+    @Test("Generic enum skips a case whose value cannot be written")
+    func testPartlyWritableGenericEnum() {
+        #expect(TestWrapped<String>.fake() == .count(0))
     }
 }

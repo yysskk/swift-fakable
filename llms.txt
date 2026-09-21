@@ -38,7 +38,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Struct properties need an explicit type annotation; inferred properties are skipped
 - `fake()` calls the memberwise initializer, so a custom `init` in the same file breaks it (declare it in an extension)
 - Only structs and enums; anything else is a compile-time error
-- A generic enum whose every case carries a generic associated value is an error, since `fake()` takes no parameters
+- A generic enum is an error only when every case carries a generic associated value, since `fake()` takes no parameters; a case with no associated values or with non-generic ones is used instead
 - The `#if DEBUG` guard is not configurable
 
 ## Requirements

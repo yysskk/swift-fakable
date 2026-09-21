@@ -862,14 +862,40 @@ struct FakableMacroTests {
             diagnostics: [
                 DiagnosticSpec(
                     message: """
-                        '@Fakable' cannot write a value for a generic associated value; \
-                        add a case without associated values
+                        '@Fakable' cannot write a value for any case of this enum; \
+                        every case carries a generic associated value
                         """,
                     line: 1,
                     column: 1,
                     severity: .error
                 )
             ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Generic enum uses the first case whose values can be written")
+    func fakableWithPartlyWritableGenericEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Wrapped<T> {
+                case value(T)
+                case count(Int)
+            }
+            """,
+            expandedSource: """
+                enum Wrapped<T> {
+                    case value(T)
+                    case count(Int)
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .count(0)
+                    }
+                    #endif
+                }
+                """,
             macros: testMacros
         )
     }
