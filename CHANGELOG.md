@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-21
+
 ### Changed
 
 - Diagnostics are now reported on the attribute with a stable `MessageID`
@@ -23,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   would reject is reported at the attribute.
 - Generic types are supported. A property whose type is a generic parameter
   becomes a required `fake()` parameter, since no value can be written for it,
-  while `[T]` and `T?` keep their `[]` and `nil` defaults. A generic enum picks the first case
-  whose values can be written, and is an error only when every case carries a
-  generic associated value.
+  while `[T]` and `T?` keep their `[]` and `nil` defaults. A generic enum picks
+  the first case whose values can be written, and is an error only when every
+  case carries a generic associated value.
 - A struct with no stored properties and an enum with no cases now warn.
   Both previously expanded to nothing in silence.
 
@@ -55,5 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enum case selection that prefers a case without associated values, and falls
   back to the first case with defaulted values when every case has them.
 
-[Unreleased]: https://github.com/yysskk/swift-fakable/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/yysskk/swift-fakable/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/yysskk/swift-fakable/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/yysskk/swift-fakable/releases/tag/0.1.0
