@@ -7,32 +7,35 @@ enum FakeGenerator {
 
     /// The stored properties `fake()` takes a parameter for, in declaration order.
     ///
-    /// Only bindings with an explicit type annotation and no accessor block
-    /// qualify: a computed property is not stored, and a property whose type is
-    /// inferred (`let count = 0`) carries no type to generate a parameter from.
+    /// These are exactly the properties the memberwise initializer takes, since
+    /// that is what the generated method calls. Type-level properties, computed
+    /// properties, and constants that already have a value are all left out for
+    /// that reason.
+    ///
+    /// A property whose type is inferred is also left out: the macro reads
+    /// syntax, not types, so there is nothing to write a parameter type from.
     static func storedProperties(of structDecl: StructDeclSyntax) -> [StoredProperty] {
-        let members = structDecl.memberBlock.members
-        return members.compactMap { member -> StoredProperty? in
-            guard let varDecl = member.decl.as(VariableDeclSyntax.self),
-                let binding = varDecl.bindings.first,
-                let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
-                let typeAnnotation = binding.typeAnnotation?.type,
-                binding.accessorBlock == nil
-            else {
-                return nil
+        structDecl.memberBlock.members.flatMap { member -> [StoredProperty] in
+            guard let variable = member.decl.as(VariableDeclSyntax.self), !variable.isStatic else {
+                return []
             }
 
-            let propertyName = identifier.identifier.text
-            let propertyType = typeAnnotation.trimmedDescription
-            let isOptional =
-                typeAnnotation.is(OptionalTypeSyntax.self)
-                || typeAnnotation.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+            return variable.bindingsWithResolvedTypes.compactMap { binding, type in
+                guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
+                    let type,
+                    binding.isStored,
+                    !(variable.isConstant && binding.initializer != nil)
+                else {
+                    return nil
+                }
 
-            return StoredProperty(
-                name: propertyName,
-                type: propertyType,
-                isOptional: isOptional
-            )
+                return StoredProperty(
+                    name: identifier.identifier.text,
+                    type: type.trimmedDescription,
+                    isOptional: type.is(OptionalTypeSyntax.self)
+                        || type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+                )
+            }
         }
     }
 

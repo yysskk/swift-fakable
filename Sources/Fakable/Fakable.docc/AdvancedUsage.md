@@ -11,16 +11,23 @@ resolves it to.
 
 ## Which struct properties become parameters
 
-A stored property is included when it is an identifier binding with an
-**explicit type annotation** and no accessor block:
+`fake()` takes exactly the parameters the memberwise initializer takes, because
+its body calls that initializer. A property is included when it is an identifier
+binding with an **explicit type annotation** that is stored, is not `static`,
+and is not a `let` that already has a value:
 
 ```swift
 @Fakable
 struct Profile {
-    let id: String            // included
-    var nickname: String?     // included
-    let joinedAt = Date()     // skipped: no type annotation
-    var displayName: String { // skipped: computed
+    let id: String             // included
+    var nickname: String?      // included
+    var visits: Int {          // included: an observer leaves it stored
+        didSet { log(visits) }
+    }
+    let x, y: Int              // included: a parameter each
+    static let version = 1     // skipped: type-level
+    let createdAt = Date()     // skipped: no type annotation, and a let with a value
+    var displayName: String {  // skipped: computed
         nickname ?? id
     }
 }

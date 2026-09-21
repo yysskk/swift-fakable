@@ -166,7 +166,10 @@ The same table applies to an enum case's associated values.
 
 - The generated method is always wrapped in `#if DEBUG`.
 - Struct parameters keep the declaration order of the stored properties, and the
-  body forwards them to the memberwise initializer by label.
+  body forwards them to the memberwise initializer by label. One declaration can
+  introduce several of them: `let x, y: Int` yields a parameter each.
+- A stored property that declares its own value (`var page: Int = 1`) still gets
+  a parameter, defaulted from its type rather than from the declared value.
 - For enums, a case **without** associated values is preferred no matter where it
   appears in the declaration, because it needs no values invented for it:
 
@@ -197,12 +200,15 @@ The same table applies to an enum case's associated values.
 
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
   actor, or protocol is a compile-time error.
+- `fake()` takes exactly the parameters the memberwise initializer takes, since
+  that is what its body calls. Type-level (`static`) properties, computed
+  properties, and constants that already have a value are left out for that
+  reason, while a `willSet` or `didSet` observer leaves a property stored and so
+  keeps its parameter.
 - Only stored properties with an **explicit type annotation** get a parameter.
   A property whose type is inferred (`let count = 0`) is skipped, because the
   macro reads the syntax tree and has no type information to work from. Annotate
   the property to include it.
-- Computed properties and properties with an accessor block are skipped, which
-  is usually what you want — the memberwise initializer does not take them either.
 - The `.fake()` fallback is emitted for any unrecognized type. If that type has
   no `fake()`, the error surfaces at compile time in the generated code; add
   `@Fakable` to it, or pass an explicit value at the call site.

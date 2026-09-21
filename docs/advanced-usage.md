@@ -19,30 +19,44 @@ The expansion adds exactly one member, always wrapped in `#if DEBUG`:
 
 ### Which properties become parameters
 
-A stored property is included when all of the following hold:
+`fake()` takes exactly the parameters the memberwise initializer takes, because
+its body calls that initializer. A stored property is included when all of the
+following hold:
 
 - it is a `var` or `let` binding with an identifier pattern
 - it has an **explicit type annotation**
-- it has no accessor block
+- it is not declared `static`
+- it is not computed — a `willSet` or `didSet` observer still counts as stored
+- it is not a `let` that already has a value, which the memberwise initializer
+  does not take either
 
 ```swift
 @Fakable
 struct Profile {
-    let id: String            // included
-    var nickname: String?     // included
-    let joinedAt = Date()     // skipped: no type annotation
-    var displayName: String { // skipped: computed
+    let id: String             // included
+    var nickname: String?      // included
+    var visits: Int {          // included: an observer leaves it stored
+        didSet { log(visits) }
+    }
+    let x, y: Int              // included: a parameter each
+    static let version = 1     // skipped: type-level
+    let createdAt = Date()     // skipped: no type annotation, and a let with a value
+    var displayName: String {  // skipped: computed
         nickname ?? id
     }
 }
 ```
 
-The type annotation requirement is the one that surprises people. The macro has
-no type information, so `let joinedAt = Date()` gives it nothing to write a
-parameter type from. Annotate it (`let joinedAt: Date = Date()`) to include it.
+Two of these are worth dwelling on.
 
-Skipping computed properties is deliberate and matches the memberwise
-initializer, which does not take them either.
+The type annotation requirement is the one that surprises people. The macro has
+no type information, so `let createdAt = Date()` gives it nothing to write a
+parameter type from. Annotate it (`let createdAt: Date = Date()`) to include it —
+as a `var`, since a `let` with a value is not in the memberwise initializer.
+
+One declaration can introduce several properties, and they each get a parameter:
+both `let x: Int, y: Int` and `let x, y: Int` yield `x` and `y`, the second by
+sharing the single annotation.
 
 ### Parameter order and the initializer
 
