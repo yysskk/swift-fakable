@@ -138,11 +138,12 @@ enum Event {
 | `T?` or `T!` | `nil` |
 | `[K: V]` | `[:]` |
 | `[T]` | `[]` |
+| a generic parameter of the enclosing type | none — the parameter is required |
 | anything else | `.fake()` |
 
 The same table is used for struct properties and for enum associated values.
 
-Three details are worth spelling out:
+Four details are worth spelling out:
 
 - **Optional wins first.** `String?` is `nil`, not `""`. This is checked before
   the type name, so an optional of any type defaults to `nil`.
@@ -154,6 +155,10 @@ Three details are worth spelling out:
   to `.fake()`, not `""`, because the macro sees the text `UserID`. Either write
   the underlying type, add `@Fakable` to the alias target, or pass the value
   explicitly at the call site.
+- **A generic parameter gets no default.** There is no value the macro could
+  write for it, so the parameter is required instead (see
+  [Generic types](#generic-types)). The check is made token by token, so a type
+  named `Total` is not mistaken for a generic parameter named `T`.
 
 ## Nested models
 
@@ -186,6 +191,47 @@ to that type, or pass the parameter explicitly.
 
 A type from a module you do not control is the common case here. Pass it
 explicitly, or wrap it in a `@Fakable` type of your own.
+
+## Generic types
+
+A property whose type is a generic parameter becomes a **required** parameter,
+since no value can be written for it:
+
+```swift
+@Fakable
+struct Box<T> {
+    let value: T
+    let label: String
+}
+
+let box = Box.fake(value: 42)          // label defaults to ""
+let named = Box<String>.fake(value: "x", label: "l")
+```
+
+Swift allows defaulted parameters in any position, so the rest of the signature
+is unaffected. Types that merely involve a generic parameter without needing a
+value of it — `[T]`, `T?` — keep their usual defaults of `[]` and `nil`.
+
+For enums the same situation has no answer, because `fake()` takes no
+parameters. A generic enum is fine as long as some case can be written — one
+with no associated values, or one whose values are not generic:
+
+```swift
+@Fakable
+enum Either<T> {
+    case some(T)
+    case none          // fake() == .none
+}
+
+@Fakable
+enum Wrapped<T> {
+    case value(T)
+    case count(Int)    // fake() == .count(0)
+}
+```
+
+Only when *every* case carries a generic associated value does the macro report
+an error, rather than generating something that cannot compile.
 
 ## Access levels
 

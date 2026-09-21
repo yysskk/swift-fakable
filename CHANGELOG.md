@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Generic types are supported. A property whose type is a generic parameter
+  becomes a required `fake()` parameter, since no value can be written for it,
+  while `[T]` and `T?` keep their `[]` and `nil` defaults. A generic enum picks the first case
+  whose values can be written, and is an error only when every case carries a
+  generic associated value.
 - A struct with no stored properties and an enum with no cases now warn.
   Both previously expanded to nothing in silence.
 

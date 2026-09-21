@@ -14,6 +14,9 @@ enum FakableDiagnostic: String, DiagnosticMessage {
     /// An enum has no case to return.
     case noCases
 
+    /// The case `fake()` would return carries a value the macro cannot write.
+    case unwritableAssociatedValue
+
     var message: String {
         switch self {
         case .unsupportedDeclaration:
@@ -22,12 +25,17 @@ enum FakableDiagnostic: String, DiagnosticMessage {
             "'@Fakable' generates nothing for a struct with no stored properties"
         case .noCases:
             "'@Fakable' generates nothing for an enum with no cases"
+        case .unwritableAssociatedValue:
+            """
+            '@Fakable' cannot write a value for any case of this enum; \
+            every case carries a generic associated value
+            """
         }
     }
 
     var severity: DiagnosticSeverity {
         switch self {
-        case .unsupportedDeclaration:
+        case .unsupportedDeclaration, .unwritableAssociatedValue:
             .error
         case .noStoredProperties, .noCases:
             .warning

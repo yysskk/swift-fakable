@@ -1,14 +1,25 @@
-/// Resolves the default value `fake()` uses for a parameter of a given type.
+import SwiftSyntax
+
+/// Resolves the value `fake()` uses for a parameter of a given type.
 ///
 /// The same rules apply to a struct's stored properties and to an enum case's
 /// associated values, so both paths go through here.
 enum DefaultValue {
-    static func resolve(type: String, isOptional: Bool) -> String {
-        if isOptional {
+    /// The value to use for `type`, or `nil` when none can be written for it.
+    ///
+    /// - Parameters:
+    ///   - type: The type as it was written. Matching is on that spelling, since
+    ///     the macro reads syntax and never resolves types.
+    ///   - genericParameterNames: The names the enclosing declaration introduces.
+    ///     A type built from one of these has no value the macro could write, so
+    ///     it resolves to `nil` rather than to `.fake()`.
+    static func resolve(for type: TypeSyntax, genericParameterNames: Set<String>) -> String? {
+        if type.is(OptionalTypeSyntax.self) || type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
             return "nil"
         }
 
-        switch type {
+        let spelling = type.trimmedDescription
+        switch spelling {
         case "String":
             return "\"\""
         case "Int", "Int8", "Int16", "Int32", "Int64",
@@ -20,23 +31,47 @@ enum DefaultValue {
             return "false"
         default:
             // Dictionary check must come before Array check
-            if type.hasPrefix("[") && type.contains(":") && type.hasSuffix("]") {
+            if spelling.hasPrefix("[") && spelling.contains(":") && spelling.hasSuffix("]") {
                 return "[:]"
             }
-            if type.hasPrefix("[") && type.hasSuffix("]") {
+            if spelling.hasPrefix("[") && spelling.hasSuffix("]") {
                 return "[]"
+            }
+            if type.references(anyOf: genericParameterNames) {
+                return nil
             }
             // For other types (structs, enums, etc.), try to use .fake()
             // If the type doesn't have .fake(), users can provide explicit default values
             return ".fake()"
         }
     }
+}
 
-    static func resolve(for property: StoredProperty) -> String {
-        resolve(type: property.type, isOptional: property.isOptional)
+extension TypeSyntax {
+    /// Whether the type is written in terms of any of `names`.
+    ///
+    /// Compared token by token, so a type called `Total` does not count as a
+    /// reference to a generic parameter named `T`.
+    func references(anyOf names: Set<String>) -> Bool {
+        guard !names.isEmpty else {
+            return false
+        }
+
+        return tokens(viewMode: .sourceAccurate).contains { token in
+            if case .identifier(let text) = token.tokenKind {
+                return names.contains(text)
+            }
+            return false
+        }
     }
+}
 
-    static func resolve(for parameter: EnumCaseParameter) -> String {
-        resolve(type: parameter.type, isOptional: parameter.isOptional)
+extension GenericParameterClauseSyntax? {
+    /// The names the clause introduces, or an empty set when there is no clause.
+    var parameterNames: Set<String> {
+        guard let self else {
+            return []
+        }
+        return Set(self.parameters.map(\.name.text))
     }
 }

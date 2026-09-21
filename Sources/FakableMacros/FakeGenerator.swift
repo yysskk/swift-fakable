@@ -15,12 +15,14 @@ enum FakeGenerator {
     /// A property whose type is inferred is also left out: the macro reads
     /// syntax, not types, so there is nothing to write a parameter type from.
     static func storedProperties(of structDecl: StructDeclSyntax) -> [StoredProperty] {
-        structDecl.memberBlock.members.flatMap { member -> [StoredProperty] in
+        let genericParameterNames = structDecl.genericParameterClause.parameterNames
+
+        return structDecl.memberBlock.members.flatMap { member -> [StoredProperty] in
             guard let variable = member.decl.as(VariableDeclSyntax.self), !variable.isStatic else {
                 return []
             }
 
-            return variable.bindingsWithResolvedTypes.compactMap { binding, type in
+            return variable.bindingsWithResolvedTypes.compactMap { binding, type -> StoredProperty? in
                 guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
                     let type,
                     binding.isStored,
@@ -32,8 +34,10 @@ enum FakeGenerator {
                 return StoredProperty(
                     name: identifier.identifier.text,
                     type: type.trimmedDescription,
-                    isOptional: type.is(OptionalTypeSyntax.self)
-                        || type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+                    defaultValue: DefaultValue.resolve(
+                        for: type,
+                        genericParameterNames: genericParameterNames
+                    )
                 )
             }
         }
@@ -43,7 +47,7 @@ enum FakeGenerator {
     ///
     /// A case without associated values is preferred, wherever it appears, since
     /// it needs no values invented for it. Only when every case carries
-    /// associated values does the first case win, with defaults filled in.
+    /// associated values does the first case win, with values filled in.
     static func firstCase(of enumDecl: EnumDeclSyntax) -> EnumCaseInfo? {
         let members = enumDecl.memberBlock.members
 
@@ -57,34 +61,53 @@ enum FakeGenerator {
             }
         }
 
-        // If no case without associated values, use the first case with default values
+        // Otherwise take the first case whose values can all be written. When
+        // none can be, hand back the first candidate anyway so the caller has
+        // something to report the failure against.
+        let genericParameterNames = enumDecl.genericParameterClause.parameterNames
+        var firstCandidate: EnumCaseInfo?
+
         for member in members {
-            if let caseDecl = member.decl.as(EnumCaseDeclSyntax.self),
-                let element = caseDecl.elements.first,
-                let parameterClause = element.parameterClause
-            {
-                let parameters = enumCaseParameters(of: parameterClause)
-                return EnumCaseInfo(name: element.name.text, parameters: parameters)
+            guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else {
+                continue
+            }
+
+            for element in caseDecl.elements {
+                guard let parameterClause = element.parameterClause else {
+                    continue
+                }
+
+                let candidate = EnumCaseInfo(
+                    name: element.name.text,
+                    parameters: enumCaseParameters(
+                        of: parameterClause,
+                        genericParameterNames: genericParameterNames
+                    )
+                )
+
+                if candidate.parameters.allSatisfy({ $0.value != nil }) {
+                    return candidate
+                }
+
+                firstCandidate = firstCandidate ?? candidate
             }
         }
 
         // Empty enum
-        return nil
+        return firstCandidate
     }
 
     private static func enumCaseParameters(
-        of parameterClause: EnumCaseParameterClauseSyntax
+        of parameterClause: EnumCaseParameterClauseSyntax,
+        genericParameterNames: Set<String>
     ) -> [EnumCaseParameter] {
-        parameterClause.parameters.map { param in
-            let type = param.type.trimmedDescription
-            let label = param.firstName?.text
-            let isOptional =
-                param.type.is(OptionalTypeSyntax.self) || param.type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
-
-            return EnumCaseParameter(
-                label: label,
-                type: type,
-                isOptional: isOptional
+        parameterClause.parameters.map { parameter in
+            EnumCaseParameter(
+                label: parameter.firstName?.text,
+                value: DefaultValue.resolve(
+                    for: parameter.type,
+                    genericParameterNames: genericParameterNames
+                )
             )
         }
     }
@@ -96,8 +119,13 @@ enum FakeGenerator {
         var assignments: [String] = []
 
         for property in properties {
-            let defaultValue = DefaultValue.resolve(for: property)
-            parameters.append("    \(property.name): \(property.type) = \(defaultValue)")
+            // A property with no value the macro can write becomes a required
+            // parameter rather than a defaulted one.
+            if let defaultValue = property.defaultValue {
+                parameters.append("    \(property.name): \(property.type) = \(defaultValue)")
+            } else {
+                parameters.append("    \(property.name): \(property.type)")
+            }
             assignments.append("        \(property.name): \(property.name)")
         }
 
@@ -117,7 +145,9 @@ enum FakeGenerator {
             """
     }
 
-    static func enumFakeMethod(firstCase: EnumCaseInfo, accessLevel: String) -> String {
+    /// The enum `fake()` source, or `nil` when no value can be written for one
+    /// of the case's associated values.
+    static func enumFakeMethod(firstCase: EnumCaseInfo, accessLevel: String) -> String? {
         if firstCase.parameters.isEmpty {
             // Case without associated values
             return """
@@ -127,26 +157,23 @@ enum FakeGenerator {
                 }
                 #endif
                 """
-        } else {
-            // Case with associated values - generate with default parameters
-            let parameterValues = firstCase.parameters
-                .map { param in
-                    let defaultValue = DefaultValue.resolve(for: param)
-                    if let label = param.label {
-                        return "\(label): \(defaultValue)"
-                    } else {
-                        return defaultValue
-                    }
-                }
-                .joined(separator: ", ")
-
-            return """
-                #if DEBUG
-                \(accessLevel)static func fake() -> Self {
-                    .\(firstCase.name)(\(parameterValues))
-                }
-                #endif
-                """
         }
+
+        // Case with associated values - fill each one in from its type
+        var renderedValues: [String] = []
+        for parameter in firstCase.parameters {
+            guard let value = parameter.value else {
+                return nil
+            }
+            renderedValues.append(parameter.label.map { "\($0): \(value)" } ?? value)
+        }
+
+        return """
+            #if DEBUG
+            \(accessLevel)static func fake() -> Self {
+                .\(firstCase.name)(\(renderedValues.joined(separator: ", ")))
+            }
+            #endif
+            """
     }
 }
