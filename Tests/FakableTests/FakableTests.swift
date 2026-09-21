@@ -59,14 +59,13 @@ struct TestNested {
 @Fakable
 struct TestCounter {
     let id: String
+    var previousCount: Int
     var count: Int {
         didSet {
-            lastSetCount = count
+            previousCount = oldValue
         }
     }
 }
-
-nonisolated(unsafe) private var lastSetCount = 0
 
 @Fakable
 struct TestConfig {
@@ -272,8 +271,22 @@ struct FakableRuntimeTests {
         let counter = TestCounter.fake()
 
         #expect(counter.id == "")
+        #expect(counter.previousCount == 0)
         #expect(counter.count == 0)
         #expect(TestCounter.fake(id: "a", count: 3).count == 3)
+    }
+
+    @Test("Property observer does not run while fake() builds the value")
+    func testPropertyObserverDuringConstruction() {
+        var counter = TestCounter.fake(previousCount: 7, count: 3)
+
+        // didSet does not fire for the initial assignment in an initializer,
+        // so the value passed to fake() survives untouched.
+        #expect(counter.previousCount == 7)
+
+        counter.count = 9
+
+        #expect(counter.previousCount == 3)
     }
 
     @Test("Static property is not a fake() parameter")
