@@ -1010,4 +1010,81 @@ struct FakableMacroTests {
             macros: testMacros
         )
     }
+    @Test("Package enum generates package fake()")
+    func fakableWithPackageEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            package enum Status {
+                case active
+                case inactive
+            }
+            """,
+            expandedSource: """
+                package enum Status {
+                    case active
+                    case inactive
+
+                    #if DEBUG
+                    package static func fake() -> Self {
+                        .active
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Fileprivate enum generates fileprivate fake()")
+    func fakableWithFileprivateEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            fileprivate enum Status {
+                case active
+                case inactive
+            }
+            """,
+            expandedSource: """
+                fileprivate enum Status {
+                    case active
+                    case inactive
+
+                    #if DEBUG
+                    fileprivate static func fake() -> Self {
+                        .active
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Private enum generates private fake()")
+    func fakableWithPrivateEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            private enum Status {
+                case active
+                case inactive
+            }
+            """,
+            expandedSource: """
+                private enum Status {
+                    case active
+                    case inactive
+
+                    #if DEBUG
+                    private static func fake() -> Self {
+                        .active
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 }

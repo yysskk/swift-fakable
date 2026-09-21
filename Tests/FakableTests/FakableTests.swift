@@ -127,6 +127,12 @@ package struct TestPackaged {
     package let id: String
 }
 
+@Fakable
+package enum TestPackagedStatus: Equatable {
+    case active
+    case inactive
+}
+
 // Runtime tests
 
 @Suite("Fakable Runtime Tests")
@@ -390,5 +396,10 @@ struct FakableRuntimeTests {
     @Test("Package struct generates a package fake()")
     func testPackageAccessLevel() {
         #expect(TestPackaged.fake(id: "a").id == "a")
+    }
+
+    @Test("Package enum generates a package fake()")
+    func testPackageEnumAccessLevel() {
+        #expect(TestPackagedStatus.fake() == .active)
     }
 }
