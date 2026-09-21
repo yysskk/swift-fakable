@@ -172,7 +172,7 @@ The same table applies to an enum case's associated values.
 
 - Structs with any number of stored properties
 - Enums with or without associated values
-- Access-level-aware generation (`public` types get a `public fake()`)
+- Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
 - Arrays and dictionaries, including nested generic spellings
 - Nested `@Fakable` types through the `.fake()` fallback

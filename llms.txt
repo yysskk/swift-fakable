@@ -25,7 +25,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 ## Key Features
 
 - Structs and enums, with or without associated values
-- Access-level-aware generation (`public` types get a `public fake()`)
+- Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
 - Arrays and dictionaries, including nested generic spellings
 - Labeled and unlabeled enum associated values

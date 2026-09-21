@@ -128,6 +128,7 @@ The generated method carries the access level of its type:
 | Declaration | Generated |
 | --- | --- |
 | `public struct` | `public static func fake(...)` |
+| `package struct` | `package static func fake(...)` |
 | `struct` / `internal struct` | `static func fake(...)` |
 | `fileprivate struct` | `fileprivate static func fake(...)` |
 | `private struct` | `private static func fake(...)` |

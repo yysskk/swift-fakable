@@ -899,4 +899,192 @@ struct FakableMacroTests {
             macros: testMacros
         )
     }
+    @Test("Package struct generates package fake()")
+    func fakableWithPackageStruct() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            package struct Item {
+                let name: String
+            }
+            """,
+            expandedSource: """
+                package struct Item {
+                    let name: String
+
+                    #if DEBUG
+                    package static func fake(
+                        name: String = ""
+                    ) -> Self {
+                        Self(
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Fileprivate struct generates fileprivate fake()")
+    func fakableWithFileprivateStruct() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            fileprivate struct Item {
+                let name: String
+            }
+            """,
+            expandedSource: """
+                fileprivate struct Item {
+                    let name: String
+
+                    #if DEBUG
+                    fileprivate static func fake(
+                        name: String = ""
+                    ) -> Self {
+                        Self(
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Private struct generates private fake()")
+    func fakableWithPrivateStruct() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            private struct Item {
+                let name: String
+            }
+            """,
+            expandedSource: """
+                private struct Item {
+                    let name: String
+
+                    #if DEBUG
+                    private static func fake(
+                        name: String = ""
+                    ) -> Self {
+                        Self(
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Explicit internal struct generates unqualified fake()")
+    func fakableWithExplicitInternalStruct() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            internal struct Item {
+                let name: String
+            }
+            """,
+            expandedSource: """
+                internal struct Item {
+                    let name: String
+
+                    #if DEBUG
+                    static func fake(
+                        name: String = ""
+                    ) -> Self {
+                        Self(
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+    @Test("Package enum generates package fake()")
+    func fakableWithPackageEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            package enum Status {
+                case active
+                case inactive
+            }
+            """,
+            expandedSource: """
+                package enum Status {
+                    case active
+                    case inactive
+
+                    #if DEBUG
+                    package static func fake() -> Self {
+                        .active
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Fileprivate enum generates fileprivate fake()")
+    func fakableWithFileprivateEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            fileprivate enum Status {
+                case active
+                case inactive
+            }
+            """,
+            expandedSource: """
+                fileprivate enum Status {
+                    case active
+                    case inactive
+
+                    #if DEBUG
+                    fileprivate static func fake() -> Self {
+                        .active
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Private enum generates private fake()")
+    func fakableWithPrivateEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            private enum Status {
+                case active
+                case inactive
+            }
+            """,
+            expandedSource: """
+                private enum Status {
+                    case active
+                    case inactive
+
+                    #if DEBUG
+                    private static func fake() -> Self {
+                        .active
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 }

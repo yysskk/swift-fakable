@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A `package` type now gets a `package fake()`. The modifier was not
+  recognised, so the generated method fell back to `internal` and was
+  invisible to the rest of the package.
+
 - `fake()` now mirrors the memberwise initializer exactly. `static` properties
   and constants that already have a value no longer become parameters, a
   `willSet` / `didSet` observer no longer removes one, and a declaration that

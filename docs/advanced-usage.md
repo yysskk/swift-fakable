@@ -242,6 +242,7 @@ reach:
 | Declaration | Generated |
 | --- | --- |
 | `public struct` | `public static func fake(...)` |
+| `package struct` | `package static func fake(...)` |
 | `struct` / `internal struct` | `static func fake(...)` |
 | `fileprivate struct` | `fileprivate static func fake(...)` |
 | `private struct` | `private static func fake(...)` |

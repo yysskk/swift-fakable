@@ -1,25 +1,29 @@
 import SwiftSyntax
 
-/// Reads the access level of the annotated declaration so the generated `fake()`
-/// is at least as visible as the type it belongs to.
+/// The access level of a declaration, and of the `fake()` generated for it.
 ///
-/// - Returns: The keyword followed by a space (for example `"public "`), or an
-///   empty string for `internal`, which needs no keyword.
-func extractAccessLevel(from declaration: some DeclGroupSyntax) -> String {
-    for modifier in declaration.modifiers {
-        switch modifier.name.text {
-        case "public":
-            return "public "
-        case "internal":
-            return ""
-        case "private":
-            return "private "
-        case "fileprivate":
-            return "fileprivate "
-        default:
-            continue
-        }
+/// The raw values are the keywords themselves, so reading one back from source
+/// is a lookup rather than a list of cases to keep in step.
+enum AccessLevel: String {
+    case `private`
+    case `fileprivate`
+    case `internal`
+    case `package`
+    case `public`
+
+    /// The level written on `declaration`, or ``internal`` when none is.
+    init(of declaration: some DeclGroupSyntax) {
+        self =
+            declaration.modifiers
+            .lazy
+            .compactMap { AccessLevel(rawValue: $0.name.text) }
+            .first ?? .internal
     }
-    // Default is internal (no keyword needed)
-    return ""
+
+    /// The modifier to write on the generated member, with its trailing space.
+    ///
+    /// Empty for ``internal``, which is the default and needs no keyword.
+    var modifier: String {
+        self == .internal ? "" : "\(rawValue) "
+    }
 }
