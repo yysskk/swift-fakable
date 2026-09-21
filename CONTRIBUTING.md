@@ -12,9 +12,10 @@ project layout, how to build and test, and the conventions we follow.
   the entry point, `FakeGenerator` reads the declaration and renders the method
   source, and `DefaultValue` decides the default for each parameter type.
 - `Tests/FakableMacroTests/` — macro-expansion tests that pin the exact
-  generated source.
+  generated source, one suite per concern.
 - `Tests/FakableTests/` — runtime tests that exercise the behavior of the
-  generated `fake()` methods.
+  generated `fake()` methods, split the same way. Every model they use lives in
+  `TestModels.swift`.
 
 ## Building and testing
 
@@ -73,9 +74,13 @@ Most changes should include both:
   swift-testing. Paste the input declaration and the exact expected expansion; if
   the whitespace is hard to predict, run the test once and copy the "Actual
   expanded source" from the failure.
-- A **runtime test** in `Tests/FakableTests/`, adding the model to the test
-  fixtures at the top of `FakableTests.swift` and asserting that the generated
-  `fake()` behaves as expected.
+- A **runtime test** in `Tests/FakableTests/`, adding the model to
+  `TestModels.swift` and asserting that the generated `fake()` behaves as
+  expected.
+
+Both targets group tests by concern — stored properties, enums, generics, access
+levels, the compilation condition, diagnostics — so add a case to the suite it
+belongs to rather than starting a new file.
 
 Diagnostics are tested by passing a `diagnostics:` array to
 `assertMacroExpansionForTesting`.
