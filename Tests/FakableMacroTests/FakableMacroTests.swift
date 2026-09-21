@@ -1,0 +1,430 @@
+import FakableMacros
+import SwiftSyntaxMacros
+import SwiftSyntaxMacrosGenericTestSupport
+import Testing
+
+private var testMacros: [String: Macro.Type] {
+    [
+        "Fakable": FakableMacro.self
+    ]
+}
+
+@Suite("FakableMacro Tests")
+struct FakableMacroTests {
+    @Test("Simple struct generates fake()")
+    func fakableWithSimpleStruct() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Person {
+                let name: String
+                let age: Int
+            }
+            """,
+            expandedSource: """
+                struct Person {
+                    let name: String
+                    let age: Int
+
+                    #if DEBUG
+                    static func fake(
+                        name: String = "",
+                        age: Int = 0
+                    ) -> Self {
+                        Self(
+                            name: name,
+                            age: age
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Optional property uses nil as default in fake()")
+    func fakableWithOptionalProperty() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                let itemId: String
+                let name: String?
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    let itemId: String
+                    let name: String?
+
+                    #if DEBUG
+                    static func fake(
+                        itemId: String = "",
+                        name: String? = nil
+                    ) -> Self {
+                        Self(
+                            itemId: itemId,
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Array uses [] and Dictionary uses [:] as default")
+    func fakableWithArrayAndDictionary() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Container {
+                let items: [String]
+                let mapping: [String: Int]
+            }
+            """,
+            expandedSource: """
+                struct Container {
+                    let items: [String]
+                    let mapping: [String: Int]
+
+                    #if DEBUG
+                    static func fake(
+                        items: [String] = [],
+                        mapping: [String: Int] = [:]
+                    ) -> Self {
+                        Self(
+                            items: items,
+                            mapping: mapping
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Custom type uses .fake() as default")
+    func fakableWithCustomType() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Order {
+                let id: String
+                let item: Item
+            }
+            """,
+            expandedSource: """
+                struct Order {
+                    let id: String
+                    let item: Item
+
+                    #if DEBUG
+                    static func fake(
+                        id: String = "",
+                        item: Item = .fake()
+                    ) -> Self {
+                        Self(
+                            id: id,
+                            item: item
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Applying @Fakable to class produces error")
+    func fakableOnClassShouldFail() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            class Person {
+                let name: String
+            }
+            """,
+            expandedSource: """
+                class Person {
+                    let name: String
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(message: "@Fakable can only be applied to a struct or enum", line: 1, column: 1)
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Enum generates fake() returning first case")
+    func fakableWithEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Sex {
+                case man
+                case woman
+            }
+            """,
+            expandedSource: """
+                enum Sex {
+                    case man
+                    case woman
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .man
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Struct with enum property uses .fake() for enum")
+    func fakableStructWithEnumProperty() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Person {
+                let name: String
+                let sex: Sex
+            }
+            """,
+            expandedSource: """
+                struct Person {
+                    let name: String
+                    let sex: Sex
+
+                    #if DEBUG
+                    static func fake(
+                        name: String = "",
+                        sex: Sex = .fake()
+                    ) -> Self {
+                        Self(
+                            name: name,
+                            sex: sex
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Public enum generates public fake()")
+    func fakableWithPublicEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            public enum ServerCartItemCategory {
+                case sideDishes
+                case vegetablesAndFruits
+                case dairyFood
+                case other
+            }
+            """,
+            expandedSource: """
+                public enum ServerCartItemCategory {
+                    case sideDishes
+                    case vegetablesAndFruits
+                    case dairyFood
+                    case other
+
+                    #if DEBUG
+                    public static func fake() -> Self {
+                        .sideDishes
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Public struct generates public fake()")
+    func fakableWithPublicStruct() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            public struct User {
+                let id: String
+                let name: String
+            }
+            """,
+            expandedSource: """
+                public struct User {
+                    let id: String
+                    let name: String
+
+                    #if DEBUG
+                    public static func fake(
+                        id: String = "",
+                        name: String = ""
+                    ) -> Self {
+                        Self(
+                            id: id,
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Enum with associated values generates fake() returning first case without parameters")
+    func fakableWithEnumAssociatedValues() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum UserType {
+                case guest
+                case user(id: String)
+                case admin(id: String, level: Int)
+            }
+            """,
+            expandedSource: """
+                enum UserType {
+                    case guest
+                    case user(id: String)
+                    case admin(id: String, level: Int)
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .guest
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Enum with associated values first skips to parameter-less case")
+    func fakableWithEnumAssociatedValuesFirst() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum UserRole {
+                case user(id: String)
+                case guest
+                case admin(id: String, level: Int)
+            }
+            """,
+            expandedSource: """
+                enum UserRole {
+                    case user(id: String)
+                    case guest
+                    case admin(id: String, level: Int)
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .guest
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Enum with only associated values generates fake() with default parameters")
+    func fakableWithOnlyAssociatedValues() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum ComplexEnum {
+                case user(id: String)
+                case admin(id: String, level: Int)
+            }
+            """,
+            expandedSource: """
+                enum ComplexEnum {
+                    case user(id: String)
+                    case admin(id: String, level: Int)
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .user(id: "")
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Empty enum generates no fake()")
+    func fakableWithEmptyEnum() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum EmptyEnum {
+            }
+            """,
+            expandedSource: """
+                enum EmptyEnum {
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Enum with single case generates fake()")
+    func fakableWithSingleCase() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum SingleCase {
+                case only
+            }
+            """,
+            expandedSource: """
+                enum SingleCase {
+                    case only
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .only
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Enum with only associated values (multiple parameters) generates fake() with defaults")
+    func fakableWithMultipleAssociatedValues() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Result {
+                case success(value: Int, message: String)
+                case failure(error: String, code: Int)
+            }
+            """,
+            expandedSource: """
+                enum Result {
+                    case success(value: Int, message: String)
+                    case failure(error: String, code: Int)
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .success(value: 0, message: "")
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+}
