@@ -48,27 +48,35 @@ if [[ ! -f "${profdata}" ]]; then
     exit 1
 fi
 
-# SwiftPM emits each test target as a bundle directory on Darwin and as a bare
-# executable everywhere else. This package has two test targets, and each one
-# links a different module: the macro implementation is only in the expansion
-# test binary. llvm-cov reports on the binaries it is handed, so collect all of
-# them — passing just one would silently describe half the package.
+# llvm-cov reports on the binaries it is handed, so every test binary has to be
+# collected: this package has two test targets that link different modules, and
+# the macro implementation is only in the expansion test binary.
+#
+# Where those binaries live depends on the platform and the build system:
+# Darwin emits one .xctest bundle directory per target, while Linux emits plain
+# executables — named `<package>PackageTests.xctest` under the classic layout
+# and `<package>PackageTests` under the Swift Build layout.
 test_binaries=()
-for bundle in "${bin_path}"/*.xctest; do
-    if [[ -d "${bundle}" ]]; then
-        candidate="${bundle}/Contents/MacOS/$(basename "${bundle}" .xctest)"
-    elif [[ -f "${bundle}" ]]; then
-        candidate="${bundle}"
-    else
-        continue
-    fi
+
+while IFS= read -r bundle; do
+    [[ -n "${bundle}" ]] || continue
+    candidate="${bundle}/Contents/MacOS/$(basename "${bundle}" .xctest)"
     if [[ -x "${candidate}" ]]; then
         test_binaries+=("${candidate}")
     fi
-done
+done < <(find "${bin_path}" -maxdepth 1 -type d -name '*.xctest' 2>/dev/null)
+
+while IFS= read -r candidate; do
+    [[ -n "${candidate}" ]] || continue
+    if [[ -x "${candidate}" ]]; then
+        test_binaries+=("${candidate}")
+    fi
+done < <(find "${bin_path}" -maxdepth 2 -type f \( -name '*.xctest' -o -name '*Tests' \) 2>/dev/null)
 
 if [[ ${#test_binaries[@]} -eq 0 ]]; then
     echo "error: no test binary found in ${bin_path}." >&2
+    echo "the directory holds:" >&2
+    ls -la "${bin_path}" >&2 || true
     exit 1
 fi
 
