@@ -114,7 +114,11 @@ enum FakeGenerator {
 
     // MARK: - Rendering
 
-    static func fakeMethod(for properties: [StoredProperty], accessLevel: AccessLevel) -> String {
+    static func fakeMethod(
+        for properties: [StoredProperty],
+        accessLevel: AccessLevel,
+        condition: CompilationCondition
+    ) -> String {
         var parameters: [String] = []
         var assignments: [String] = []
 
@@ -132,8 +136,8 @@ enum FakeGenerator {
         let parametersString = parameters.joined(separator: ",\n")
         let assignmentsString = assignments.joined(separator: ",\n")
 
-        return """
-            #if DEBUG
+        return condition.guarding(
+            """
             \(accessLevel.modifier)static func fake(
             \(parametersString)
             ) -> Self {
@@ -141,22 +145,26 @@ enum FakeGenerator {
             \(assignmentsString)
                 )
             }
-            #endif
             """
+        )
     }
 
     /// The enum `fake()` source, or `nil` when no value can be written for one
     /// of the case's associated values.
-    static func enumFakeMethod(firstCase: EnumCaseInfo, accessLevel: AccessLevel) -> String? {
+    static func enumFakeMethod(
+        firstCase: EnumCaseInfo,
+        accessLevel: AccessLevel,
+        condition: CompilationCondition
+    ) -> String? {
         if firstCase.parameters.isEmpty {
             // Case without associated values
-            return """
-                #if DEBUG
+            return condition.guarding(
+                """
                 \(accessLevel.modifier)static func fake() -> Self {
                     .\(firstCase.name)
                 }
-                #endif
                 """
+            )
         }
 
         // Case with associated values - fill each one in from its type
@@ -168,12 +176,12 @@ enum FakeGenerator {
             renderedValues.append(parameter.label.map { "\($0): \(value)" } ?? value)
         }
 
-        return """
-            #if DEBUG
+        return condition.guarding(
+            """
             \(accessLevel.modifier)static func fake() -> Self {
                 .\(firstCase.name)(\(renderedValues.joined(separator: ", ")))
             }
-            #endif
             """
+        )
     }
 }

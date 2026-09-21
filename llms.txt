@@ -2,7 +2,7 @@
 
 > A Swift macro (`@Fakable`) that generates a `fake()` factory method on structs and enums for building test fixtures. MIT licensed, supports Swift 6.0+.
 
-swift-fakable provides a single `@Fakable` macro that you attach to a struct or an enum. It generates a `static func fake(...)` wrapped in `#if DEBUG`:
+swift-fakable provides a single `@Fakable` macro that you attach to a struct or an enum. It generates a `static func fake(...)` wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom condition or removes the guard):
 
 - On a **struct**, one parameter per stored property, in declaration order, each defaulted by its type, forwarded to the memberwise initializer.
 - On an **enum**, a parameterless `fake()` returning the first case without associated values, or the first case with its values defaulted when every case has them.
@@ -31,6 +31,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Labeled and unlabeled enum associated values
 - Nested `@Fakable` models through the `.fake()` fallback
 - Generic structs (generic-typed properties become required parameters) and generic enums
+- Configurable compilation condition (`@Fakable(condition:)` — `.debug` default, `.custom("FAKING")` / `.custom("DEBUG || UITESTS")`, or `.always`)
 
 ## Limitations
 
@@ -39,7 +40,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - `fake()` calls the memberwise initializer, so a custom `init` in the same file breaks it (declare it in an extension)
 - Only structs and enums; anything else is a compile-time error
 - A generic enum is an error only when every case carries a generic associated value, since `fake()` takes no parameters; a case with no associated values or with non-generic ones is used instead
-- The `#if DEBUG` guard is not configurable
+- `condition:` is the only argument, and must be written literally as `.debug`, `.always`, or `.custom("CONDITION")`; a condition `#if` would reject is a compile-time error
 
 ## Requirements
 

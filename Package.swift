@@ -31,6 +31,7 @@ let package = Package(
                 .product(name: "SwiftDiagnostics", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ]
         ),
@@ -40,7 +41,13 @@ let package = Package(
         ),
         .testTarget(
             name: "FakableTests",
-            dependencies: ["Fakable"]
+            dependencies: ["Fakable"],
+            swiftSettings: [
+                // Exercises @Fakable(condition: .custom(...)) end to end; the
+                // runtime tests reference a fake that only exists when this
+                // flag is defined.
+                .define("FAKABLE_RUNTIME_TEST_CONDITION")
+            ]
         ),
         .testTarget(
             name: "FakableMacroTests",

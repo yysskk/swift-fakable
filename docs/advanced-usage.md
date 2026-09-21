@@ -252,18 +252,36 @@ initializer it calls is `internal` by default: only a declaration's signature
 has to be as visible as the declaration itself, and the initializer appears
 only in the body. The `.fake()` default arguments are fine for the same reason.
 
-## The `#if DEBUG` guard
+## The compilation condition
 
-Every generated method is wrapped in `#if DEBUG`, so `fake()` exists only where
-`DEBUG` is defined:
+By default every generated method is wrapped in `#if DEBUG`, so `fake()` exists
+only where `DEBUG` is defined:
 
 - Xcode's Debug configuration defines it by default
 - `swift test` and `swift build` (without `-c release`) define it
 - a release build does not, so nothing from this macro reaches shipping code
 
-There is currently no argument to change the guard. If you need fixtures in a
-release-configuration test-support module, keep those models in a target that is
-built with `-D DEBUG`, or construct them without `fake()`.
+The `condition:` argument chooses a different guard:
+
+```swift
+@Fakable                                  // #if DEBUG (default)
+@Fakable(condition: .custom("FAKING"))    // #if FAKING
+@Fakable(condition: .custom("DEBUG || UITESTS"))
+@Fakable(condition: .always)              // no #if guard
+```
+
+`.custom` takes anything `#if` accepts, as a string literal: identifiers,
+`true` / `false`, `!`, `&&`, `||`, parentheses, and platform checks such as
+`os(iOS)` or `canImport(UIKit)`. It is validated by parsing `#if <condition>`,
+so the rule is the compiler's own; a condition it would reject is a
+compile-time error rather than an `#if` that fails later. Define each flag the
+condition names in every target that needs the fixture:
+`SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode, or `.define("FLAG")` under
+`swiftSettings` in a package manifest.
+
+The value has to be written literally at the attachment site. The macro expands
+at compile time, so a `let condition = ...` defined elsewhere is not something
+it can read, and passing one is an error.
 
 ## Errors
 
@@ -283,4 +301,12 @@ attribute simply had nothing to do:
 ```
 '@Fakable' generates nothing for a struct with no stored properties
 '@Fakable' generates nothing for an enum with no cases
+```
+
+The `condition:` argument has two errors of its own, for a value that is not
+written literally and for a condition `#if` would reject:
+
+```
+'@Fakable' needs 'condition:' written literally as '.debug', '.always', or '.custom("FLAG")'
+"not a condition!" is not a compilation condition '#if' accepts
 ```

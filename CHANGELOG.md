@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@Fakable(condition:)` chooses the compilation condition that guards the
+  generated method: `.debug` (the default, `#if DEBUG`), `.custom("FLAG")` for
+  any condition `#if` accepts, or `.always` for no guard at all. A custom
+  condition is validated by parsing `#if <condition>`, so one the compiler
+  would reject is reported at the attribute.
 - Generic types are supported. A property whose type is a generic parameter
   becomes a required `fake()` parameter, since no value can be written for it,
   while `[T]` and `T?` keep their `[]` and `nil` defaults. A generic enum picks the first case
