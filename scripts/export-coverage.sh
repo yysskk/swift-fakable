@@ -52,12 +52,11 @@ fi
 # collected: this package has two test targets that link different modules, and
 # the macro implementation is only in the expansion test binary.
 #
-# Where those binaries live depends on the platform and the build system:
-# Darwin emits one .xctest bundle directory per target, while Linux emits plain
-# executables — named `<package>PackageTests.xctest` under the classic layout
-# and `<package>PackageTests` under the Swift Build layout.
+# Where the instrumented code ends up depends on the platform and the build
+# system, so try the layouts in order and take the first that matches.
 test_binaries=()
 
+# Darwin: one .xctest bundle directory per test target.
 while IFS= read -r bundle; do
     [[ -n "${bundle}" ]] || continue
     candidate="${bundle}/Contents/MacOS/$(basename "${bundle}" .xctest)"
@@ -66,12 +65,26 @@ while IFS= read -r bundle; do
     fi
 done < <(find "${bin_path}" -maxdepth 1 -type d -name '*.xctest' 2>/dev/null)
 
-while IFS= read -r candidate; do
-    [[ -n "${candidate}" ]] || continue
-    if [[ -x "${candidate}" ]]; then
+# Swift Build on Linux: the code lives in a shared object per test target,
+# loaded by a thin `<target>-test-runner` executable that carries none of it.
+# Handing llvm-cov the runner would report nothing, so take the objects.
+if [[ ${#test_binaries[@]} -eq 0 ]]; then
+    while IFS= read -r candidate; do
+        [[ -n "${candidate}" ]] || continue
         test_binaries+=("${candidate}")
-    fi
-done < <(find "${bin_path}" -maxdepth 2 -type f \( -name '*.xctest' -o -name '*Tests' \) 2>/dev/null)
+    done < <(find "${bin_path}" -maxdepth 1 -type f -name '*Tests.so' 2>/dev/null)
+fi
+
+# Classic SwiftPM on Linux: a single executable for the whole package, named
+# with a .xctest suffix despite not being a bundle.
+if [[ ${#test_binaries[@]} -eq 0 ]]; then
+    while IFS= read -r candidate; do
+        [[ -n "${candidate}" ]] || continue
+        if [[ -x "${candidate}" ]]; then
+            test_binaries+=("${candidate}")
+        fi
+    done < <(find "${bin_path}" -maxdepth 1 -type f \( -name '*.xctest' -o -name '*PackageTests' \) 2>/dev/null)
+fi
 
 if [[ ${#test_binaries[@]} -eq 0 ]]; then
     echo "error: no test binary found in ${bin_path}." >&2
