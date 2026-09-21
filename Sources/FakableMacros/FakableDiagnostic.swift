@@ -4,7 +4,7 @@ import SwiftDiagnostics
 ///
 /// Every case carries a stable ``MessageID``, so a diagnostic can be recognised
 /// by tooling rather than only by its text.
-enum FakableDiagnostic: String, DiagnosticMessage {
+enum FakableDiagnostic: DiagnosticMessage, Error {
     /// The macro was attached to something other than a struct or an enum.
     case unsupportedDeclaration
 
@@ -16,6 +16,12 @@ enum FakableDiagnostic: String, DiagnosticMessage {
 
     /// The case `fake()` would return carries a value the macro cannot write.
     case unwritableAssociatedValue
+
+    /// The `condition:` argument was not written in a form the macro can read.
+    case unreadableCondition
+
+    /// The custom condition is not something `#if` accepts.
+    case invalidCondition(String)
 
     var message: String {
         switch self {
@@ -30,19 +36,40 @@ enum FakableDiagnostic: String, DiagnosticMessage {
             '@Fakable' cannot write a value for any case of this enum; \
             every case carries a generic associated value
             """
+        case .unreadableCondition:
+            """
+            '@Fakable' needs 'condition:' written literally as '.debug', \
+            '.always', or '.custom("FLAG")'
+            """
+        case .invalidCondition(let condition):
+            // Spelled as a literal, so a condition containing a newline is
+            // still reported on one line.
+            "\(String(reflecting: condition)) is not a compilation condition '#if' accepts"
         }
     }
 
     var severity: DiagnosticSeverity {
         switch self {
-        case .unsupportedDeclaration, .unwritableAssociatedValue:
-            .error
         case .noStoredProperties, .noCases:
             .warning
+        case .unsupportedDeclaration, .unwritableAssociatedValue, .unreadableCondition,
+            .invalidCondition:
+            .error
         }
     }
 
     var diagnosticID: MessageID {
-        MessageID(domain: "FakableMacros", id: rawValue)
+        MessageID(domain: "FakableMacros", id: identifier)
+    }
+
+    private var identifier: String {
+        switch self {
+        case .unsupportedDeclaration: "unsupportedDeclaration"
+        case .noStoredProperties: "noStoredProperties"
+        case .noCases: "noCases"
+        case .unwritableAssociatedValue: "unwritableAssociatedValue"
+        case .unreadableCondition: "unreadableCondition"
+        case .invalidCondition: "invalidCondition"
+        }
     }
 }

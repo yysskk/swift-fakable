@@ -14,6 +14,14 @@ public struct FakableMacro: MemberMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
+        let condition: CompilationCondition
+        do {
+            condition = try CompilationCondition(of: node)
+        } catch {
+            context.diagnose(node, error)
+            return []
+        }
+
         if let structDecl = declaration.as(StructDeclSyntax.self) {
             let storedProperties = FakeGenerator.storedProperties(of: structDecl)
 
@@ -24,7 +32,8 @@ public struct FakableMacro: MemberMacro {
 
             let fakeMethod = FakeGenerator.fakeMethod(
                 for: storedProperties,
-                accessLevel: AccessLevel(of: declaration)
+                accessLevel: AccessLevel(of: declaration),
+                condition: condition
             )
             return [DeclSyntax(stringLiteral: fakeMethod)]
         }
@@ -38,7 +47,8 @@ public struct FakableMacro: MemberMacro {
             guard
                 let fakeMethod = FakeGenerator.enumFakeMethod(
                     firstCase: firstCase,
-                    accessLevel: AccessLevel(of: declaration)
+                    accessLevel: AccessLevel(of: declaration),
+                    condition: condition
                 )
             else {
                 context.diagnose(node, .unwritableAssociatedValue)

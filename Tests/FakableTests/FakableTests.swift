@@ -133,6 +133,16 @@ package enum TestPackagedStatus: Equatable {
     case inactive
 }
 
+@Fakable(condition: .always)
+struct TestAlwaysFaked {
+    let id: String
+}
+
+@Fakable(condition: .custom("FAKABLE_RUNTIME_TEST_CONDITION"))
+struct TestConditionallyFaked {
+    let id: String
+}
+
 // Runtime tests
 
 @Suite("Fakable Runtime Tests")
@@ -401,5 +411,15 @@ struct FakableRuntimeTests {
     @Test("Package enum generates a package fake()")
     func testPackageEnumAccessLevel() {
         #expect(TestPackagedStatus.fake() == .active)
+    }
+
+    @Test("Unguarded fake() is available in every configuration")
+    func testAlwaysCondition() {
+        #expect(TestAlwaysFaked.fake(id: "a").id == "a")
+    }
+
+    @Test("Custom condition guards fake() behind its own flag")
+    func testCustomCondition() {
+        #expect(TestConditionallyFaked.fake(id: "a").id == "a")
     }
 }

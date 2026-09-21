@@ -10,7 +10,7 @@
 `swift-fakable` provides a `@Fakable` macro that generates a `fake()` factory method for test fixtures.
 
 - A test names only the values it cares about; every other parameter has a default.
-- Generated methods are emitted inside `#if DEBUG`, so they never ship in a release build.
+- Generated methods are emitted inside `#if DEBUG` by default; the `condition:` argument selects a different compilation condition, or none (see [Choosing When Fixtures Are Compiled](#choosing-when-fixtures-are-compiled)).
 - Works on both structs (one parameter per stored property) and enums (returns a representative case).
 
 ## Installation
@@ -168,6 +168,39 @@ let user = User.fake(address: .fake(city: "Tokyo"))
 
 The same table applies to an enum case's associated values.
 
+## Choosing When Fixtures Are Compiled
+
+By default `fake()` is wrapped in `#if DEBUG`, so it never ships in a release
+build. When a fixture has to exist elsewhere — a test-support module built in the
+release configuration, SwiftUI preview data, or a UI-test host app — pass a
+`condition:`:
+
+```swift
+@Fakable                                     // #if DEBUG (default)
+struct Item { ... }
+
+@Fakable(condition: .custom("FAKING"))       // #if FAKING
+struct Order { ... }
+
+@Fakable(condition: .always)                 // no #if guard
+struct PreviewData { ... }
+```
+
+- `.debug` — wraps `fake()` in `#if DEBUG`. This is the default.
+- `.custom("CONDITION")` — wraps it in `#if CONDITION`. The condition is
+  anything `#if` accepts, spelled as a string literal: a flag (`"FAKING"`), or
+  an expression built from identifiers, `true` / `false`, `!`, `&&`, `||`,
+  parentheses, and platform checks (`"DEBUG || UITESTS"`,
+  `"os(iOS) && !RELEASE"`, `"canImport(XCTest)"`). Define each flag in every
+  target that needs the fixture: `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode,
+  or `.define("FLAG")` under `swiftSettings` in a package manifest.
+- `.always` — emits `fake()` with no `#if` guard, in every build configuration.
+  Use this deliberately, for example in a test-support module that is never
+  linked into a shipping product.
+
+The condition must be written literally at the attachment site — the macro
+expands at compile time and cannot read a value computed at run time.
+
 ## Supported Features
 
 - Structs with any number of stored properties
@@ -178,10 +211,12 @@ The same table applies to an enum case's associated values.
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
+- Configurable compilation condition (`condition:` — `#if DEBUG` by default, a custom condition, or no guard)
 
 ## Behavioral Notes
 
-- The generated method is always wrapped in `#if DEBUG`.
+- The generated method is wrapped in `#if DEBUG` unless `condition:` says
+  otherwise.
 - Struct parameters keep the declaration order of the stored properties, and the
   body forwards them to the memberwise initializer by label. One declaration can
   introduce several of them: `let x, y: Int` yields a parameter each.
@@ -235,13 +270,20 @@ The same table applies to an enum case's associated values.
   associated value: `fake()` takes no parameters, so there is nowhere to get the
   value from. A case with no associated values, or one whose values are not
   generic, is used instead.
-- There is currently no way to change the `#if DEBUG` guard.
+- The only argument `@Fakable` accepts is `condition:`, and its value must be
+  written literally as `.debug`, `.always`, or `.custom("CONDITION")` with a
+  string literal. Anything else is a compile-time error, as is a condition
+  `#if` would reject.
 
 ## Troubleshooting
 
-- **`fake()` can't be found.** The generated method lives inside `#if DEBUG`, so
-  it only exists in debug builds. Reference it from test targets or debug
-  configurations.
+- **`fake()` can't be found.** By default the generated method lives inside
+  `#if DEBUG`, so it only exists in debug builds. Reference it from test targets
+  or debug configurations — or pass a `condition:` when the fixture is needed in
+  other configurations (see
+  [Choosing When Fixtures Are Compiled](#choosing-when-fixtures-are-compiled)).
+  For `.custom("CONDITION")`, make sure every flag it names is defined in the
+  target that uses the fixture.
 - **"Macro expansion" / trust prompt in Xcode.** Choose **Trust & Enable** the
   first time you build a target that uses `@Fakable` (see the note in
   [Installation](#installation)).

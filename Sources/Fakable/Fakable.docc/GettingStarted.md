@@ -27,7 +27,7 @@ The first time you build a target that uses `@Fakable`, Xcode shows a
 
 ## Faking a struct
 
-Attach ``Fakable()`` to a struct. The macro adds one `fake()` parameter per
+Attach ``Fakable(condition:)`` to a struct. The macro adds one `fake()` parameter per
 stored property, in declaration order:
 
 ```swift
@@ -89,9 +89,16 @@ let user = User.fake(address: .fake(city: "Tokyo"))
 
 ## Where `fake()` exists
 
-The generated method lives inside `#if DEBUG`. It is available to test targets
-and debug builds, and absent from release builds. If the compiler cannot find
-`fake()`, check the configuration you are building.
+By default the generated method lives inside `#if DEBUG`. It is available to
+test targets and debug builds, and absent from release builds. If the compiler
+cannot find `fake()`, check the configuration you are building.
+
+Pass a ``FakeCompilationCondition`` when a fixture has to exist elsewhere:
+
+```swift
+@Fakable(condition: .custom("FAKING"))   // #if FAKING
+@Fakable(condition: .always)             // no #if guard
+```
 
 ## Next steps
 

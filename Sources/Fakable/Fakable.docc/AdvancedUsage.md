@@ -4,7 +4,7 @@ The rules `@Fakable` follows when it generates `fake()`.
 
 ## Overview
 
-``Fakable()`` is an attached member macro. It never sees types — only the syntax
+``Fakable(condition:)`` is an attached member macro. It never sees types — only the syntax
 of the declaration it is attached to. Every rule below follows from that:
 decisions come from the text you wrote, not from what the compiler later
 resolves it to.
@@ -93,7 +93,7 @@ Labels on associated values are preserved when present and omitted when not:
 
 The `.fake()` fallback is what makes nested models compose. If a nested type has
 no `fake()`, the failure surfaces as `value of type 'X' has no member 'fake'` in
-the generated code — add ``Fakable()`` to that type, or pass the parameter
+the generated code — add ``Fakable(condition:)`` to that type, or pass the parameter
 explicitly. For a type from a module you do not control, passing it explicitly
 (or wrapping it in a `@Fakable` type of your own) is the way.
 
@@ -137,19 +137,30 @@ A `public fake()` works from another module even though the memberwise
 initializer it calls is `internal` by default: only a signature has to be as
 visible as the declaration itself, and the initializer appears only in the body.
 
-## The `#if DEBUG` guard
+## The compilation condition
 
-Every generated method is wrapped in `#if DEBUG`, so `fake()` exists only where
-`DEBUG` is defined — Xcode's Debug configuration, `swift test`, and `swift build`
-without `-c release`. Nothing from this macro reaches shipping code.
+By default every generated method is wrapped in `#if DEBUG`, so `fake()` exists
+only where `DEBUG` is defined — Xcode's Debug configuration, `swift test`, and
+`swift build` without `-c release`. Nothing from this macro reaches shipping
+code.
 
-There is currently no argument to change the guard. If you need fixtures in a
-release-configuration test-support module, build that target with `-D DEBUG`, or
-construct the models without `fake()`.
+``FakeCompilationCondition`` chooses a different guard:
+
+```swift
+@Fakable                                  // #if DEBUG (default)
+@Fakable(condition: .custom("FAKING"))    // #if FAKING
+@Fakable(condition: .always)              // no #if guard
+```
+
+`.custom` takes anything `#if` accepts, as a string literal. It is validated by
+parsing `#if <condition>`, so a condition the compiler would reject is a
+compile-time error rather than an `#if` that fails later. The value has to be
+written literally at the attachment site, since the macro expands at compile
+time.
 
 ## Errors
 
-Attaching ``Fakable()`` to anything other than a struct or an enum is a
+Attaching ``Fakable(condition:)`` to anything other than a struct or an enum is a
 compile-time error, reported on the attribute itself:
 
 ```
@@ -161,3 +172,6 @@ initializer to forward to, which is the underlying reason.
 
 A struct with no stored properties and an enum with no cases each warn instead:
 the declaration is valid, and the attribute simply had nothing to do.
+
+The `condition:` argument has two errors of its own, for a value that is not
+written literally and for a condition `#if` would reject.
