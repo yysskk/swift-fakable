@@ -114,7 +114,7 @@ enum FakeGenerator {
 
     // MARK: - Rendering
 
-    static func fakeMethod(for properties: [StoredProperty], accessLevel: String) -> String {
+    static func fakeMethod(for properties: [StoredProperty], accessLevel: AccessLevel) -> String {
         var parameters: [String] = []
         var assignments: [String] = []
 
@@ -134,7 +134,7 @@ enum FakeGenerator {
 
         return """
             #if DEBUG
-            \(accessLevel)static func fake(
+            \(accessLevel.modifier)static func fake(
             \(parametersString)
             ) -> Self {
                 Self(
@@ -147,12 +147,12 @@ enum FakeGenerator {
 
     /// The enum `fake()` source, or `nil` when no value can be written for one
     /// of the case's associated values.
-    static func enumFakeMethod(firstCase: EnumCaseInfo, accessLevel: String) -> String? {
+    static func enumFakeMethod(firstCase: EnumCaseInfo, accessLevel: AccessLevel) -> String? {
         if firstCase.parameters.isEmpty {
             // Case without associated values
             return """
                 #if DEBUG
-                \(accessLevel)static func fake() -> Self {
+                \(accessLevel.modifier)static func fake() -> Self {
                     .\(firstCase.name)
                 }
                 #endif
@@ -170,7 +170,7 @@ enum FakeGenerator {
 
         return """
             #if DEBUG
-            \(accessLevel)static func fake() -> Self {
+            \(accessLevel.modifier)static func fake() -> Self {
                 .\(firstCase.name)(\(renderedValues.joined(separator: ", ")))
             }
             #endif
