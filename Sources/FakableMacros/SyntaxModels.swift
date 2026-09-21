@@ -2,7 +2,10 @@
 struct StoredProperty {
     let name: String
     let type: String
-    let isOptional: Bool
+
+    /// The value the parameter defaults to, or `nil` when the parameter has to
+    /// be required because no value can be written for its type.
+    let defaultValue: String?
 }
 
 /// The enum case that `fake()` returns, and the associated values it needs.
@@ -14,6 +17,7 @@ struct EnumCaseInfo {
 /// A single associated value of an enum case.
 struct EnumCaseParameter {
     let label: String?
-    let type: String
-    let isOptional: Bool
+
+    /// The value `fake()` passes, or `nil` when none can be written for its type.
+    let value: String?
 }

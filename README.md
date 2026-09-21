@@ -130,7 +130,23 @@ static func fake() -> Self {
 | `Array` (`[T]`) | `[]` |
 | `Dictionary` (`[K: V]`) | `[:]` |
 | `Optional` (`T?`, `T!`) | `nil` |
+| a generic parameter of the type | none — the parameter is required |
 | anything else | `.fake()` |
+
+A generic parameter has no value the macro could write, so `fake()` asks for it
+instead:
+
+```swift
+@Fakable
+struct Box<T> {
+    let value: T
+    let label: String
+}
+
+let box = Box.fake(value: 42)   // label defaults to ""
+```
+
+`[T]` and `T?` still default to `[]` and `nil`, since those need no `T`.
 
 The `.fake()` fallback is what makes nested models compose: a property of type
 `Address` resolves to `Address.fake()`, so `Address` needs `@Fakable` too.
@@ -161,6 +177,7 @@ The same table applies to an enum case's associated values.
 - Arrays and dictionaries, including nested generic spellings
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
+- Generic structs and enums
 
 ## Behavioral Notes
 
@@ -214,6 +231,9 @@ The same table applies to an enum case's associated values.
   `@Fakable` to it, or pass an explicit value at the call site.
 - Types are matched by their written spelling, so a type alias for `String`
   resolves to `.fake()` rather than `""`.
+- A generic enum whose every case carries a generic associated value is an
+  error: `fake()` takes no parameters, so there is nowhere to get the value
+  from. Give the enum a case without associated values.
 - There is currently no way to change the `#if DEBUG` guard.
 
 ## Troubleshooting

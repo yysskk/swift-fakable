@@ -98,6 +98,24 @@ struct TestComputed {
     }
 }
 
+@Fakable
+struct TestBox<T> {
+    let value: T
+    let label: String
+}
+
+@Fakable
+struct TestBag<Element> {
+    let items: [Element]
+    let first: Element?
+}
+
+@Fakable
+enum TestEither<T: Equatable>: Equatable {
+    case some(T)
+    case none
+}
+
 // Runtime tests
 
 @Suite("Fakable Runtime Tests")
@@ -328,5 +346,28 @@ struct FakableRuntimeTests {
     @Test("Computed property is not a fake() parameter")
     func testComputedProperty() {
         #expect(TestComputed.fake(name: "a").label == "a")
+    }
+
+    @Test("Generic property is a required fake() parameter")
+    func testGenericProperty() {
+        let box = TestBox.fake(value: 42)
+
+        #expect(box.value == 42)
+        #expect(box.label == "")
+        #expect(TestBox<String>.fake(value: "x", label: "l").label == "l")
+    }
+
+    @Test("Collections and optionals of a generic parameter keep their default")
+    func testGenericCollections() {
+        let bag = TestBag<Int>.fake()
+
+        #expect(bag.items.isEmpty)
+        #expect(bag.first == nil)
+        #expect(TestBag.fake(items: [1, 2], first: 1).items == [1, 2])
+    }
+
+    @Test("Generic enum returns the case without associated values")
+    func testGenericEnum() {
+        #expect(TestEither<Int>.fake() == .none)
     }
 }

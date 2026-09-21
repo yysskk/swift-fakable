@@ -81,6 +81,7 @@ Labels on associated values are preserved when present and omitted when not:
 | `T?` or `T!` | `nil` |
 | `[K: V]` | `[:]` |
 | `[T]` | `[]` |
+| a generic parameter of the enclosing type | none — the parameter is required |
 | anything else | `.fake()` |
 
 - **Optional wins first.** `String?` is `nil`, not `""`.
@@ -95,6 +96,29 @@ no `fake()`, the failure surfaces as `value of type 'X' has no member 'fake'` in
 the generated code — add ``Fakable()`` to that type, or pass the parameter
 explicitly. For a type from a module you do not control, passing it explicitly
 (or wrapping it in a `@Fakable` type of your own) is the way.
+
+## Generic types
+
+A property whose type is a generic parameter becomes a **required** parameter,
+since no value can be written for it:
+
+```swift
+@Fakable
+struct Box<T> {
+    let value: T
+    let label: String
+}
+
+let box = Box.fake(value: 42)   // label defaults to ""
+```
+
+Types that merely involve a generic parameter without needing a value of it —
+`[T]`, `T?` — keep their usual defaults of `[]` and `nil`.
+
+For enums the same situation has no answer, because `fake()` takes no
+parameters. A generic enum works as long as it has a case without associated
+values; when every case carries a generic associated value, the macro reports an
+error rather than generating something that cannot compile.
 
 ## Access levels
 

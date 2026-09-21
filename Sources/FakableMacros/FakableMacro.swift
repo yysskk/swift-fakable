@@ -35,10 +35,15 @@ public struct FakableMacro: MemberMacro {
                 return []
             }
 
-            let fakeMethod = FakeGenerator.enumFakeMethod(
-                firstCase: firstCase,
-                accessLevel: extractAccessLevel(from: declaration)
-            )
+            guard
+                let fakeMethod = FakeGenerator.enumFakeMethod(
+                    firstCase: firstCase,
+                    accessLevel: extractAccessLevel(from: declaration)
+                )
+            else {
+                context.diagnose(node, .unwritableAssociatedValue)
+                return []
+            }
             return [DeclSyntax(stringLiteral: fakeMethod)]
         }
 

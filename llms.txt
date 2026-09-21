@@ -15,6 +15,7 @@ swift-fakable provides a single `@Fakable` macro that you attach to a struct or 
 - `Double`, `Float`, `CGFloat` → `0.0`
 - `Bool` → `false`
 - `T?` / `T!` → `nil` (checked before the type name)
+- a generic parameter of the enclosing type → no default; the parameter is required
 - `[K: V]` → `[:]` (checked before array)
 - `[T]` → `[]`
 - anything else → `.fake()`, so nested models compose when each is `@Fakable`
@@ -29,6 +30,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Arrays and dictionaries, including nested generic spellings
 - Labeled and unlabeled enum associated values
 - Nested `@Fakable` models through the `.fake()` fallback
+- Generic structs (generic-typed properties become required parameters) and generic enums
 
 ## Limitations
 
@@ -36,6 +38,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Struct properties need an explicit type annotation; inferred properties are skipped
 - `fake()` calls the memberwise initializer, so a custom `init` in the same file breaks it (declare it in an extension)
 - Only structs and enums; anything else is a compile-time error
+- A generic enum whose every case carries a generic associated value is an error, since `fake()` takes no parameters
 - The `#if DEBUG` guard is not configurable
 
 ## Requirements
