@@ -194,12 +194,12 @@ The same table applies to an enum case's associated values.
   ```
 
 - An enum with no cases generates nothing, and neither does a struct with no
-  stored properties. Neither case is an error.
+  stored properties. Both warn, since the attribute had no effect.
 
 ## Diagnostics and Limitations
 
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
-  actor, or protocol is a compile-time error.
+  actor, or protocol is a compile-time error reported on the attribute itself.
 - `fake()` takes exactly the parameters the memberwise initializer takes, since
   that is what its body calls. Type-level (`static`) properties, computed
   properties, and constants that already have a value are left out for that

@@ -139,7 +139,7 @@ struct FakableMacroTests {
         )
     }
 
-    @Test("Applying @Fakable to class produces error")
+    @Test("Applying @Fakable to a class is an error")
     func fakableOnClassShouldFail() {
         assertMacroExpansionForTesting(
             """
@@ -154,7 +154,68 @@ struct FakableMacroTests {
                 }
                 """,
             diagnostics: [
-                DiagnosticSpec(message: "@Fakable can only be applied to a struct or enum", line: 1, column: 1)
+                DiagnosticSpec(
+                    message: "'@Fakable' can only be applied to a struct or an enum",
+                    line: 1,
+                    column: 1,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Applying @Fakable to a protocol is an error")
+    func fakableOnProtocolShouldFail() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            protocol Person {
+                var name: String { get }
+            }
+            """,
+            expandedSource: """
+                protocol Person {
+                    var name: String { get }
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "'@Fakable' can only be applied to a struct or an enum",
+                    line: 1,
+                    column: 1,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Struct with no stored properties warns")
+    func fakableWithoutStoredProperties() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Marker {
+                var label: String {
+                    "marker"
+                }
+            }
+            """,
+            expandedSource: """
+                struct Marker {
+                    var label: String {
+                        "marker"
+                    }
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "'@Fakable' generates nothing for a struct with no stored properties",
+                    line: 1,
+                    column: 1,
+                    severity: .warning
+                )
             ],
             macros: testMacros
         )
@@ -362,7 +423,7 @@ struct FakableMacroTests {
         )
     }
 
-    @Test("Empty enum generates no fake()")
+    @Test("Enum with no cases warns")
     func fakableWithEmptyEnum() {
         assertMacroExpansionForTesting(
             """
@@ -374,6 +435,14 @@ struct FakableMacroTests {
                 enum EmptyEnum {
                 }
                 """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "'@Fakable' generates nothing for an enum with no cases",
+                    line: 1,
+                    column: 1,
+                    severity: .warning
+                )
+            ],
             macros: testMacros
         )
     }

@@ -52,6 +52,8 @@
 /// build. Reference it from test targets or debug configurations only.
 ///
 /// - Note: `@Fakable` can only be attached to a struct or an enum. Attaching it
-///   to anything else is a compile-time error.
+///   to anything else is a compile-time error. A struct with no stored
+///   properties and an enum with no cases warn instead, since the attribute
+///   had nothing to do.
 @attached(member, names: named(fake))
 public macro Fakable() = #externalMacro(module: "FakableMacros", type: "FakableMacro")
