@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Diagnostics are now reported on the attribute with a stable `MessageID`
+  rather than thrown as a plain error, and the wording of the
+  struct-or-enum diagnostic changed to `'@Fakable' can only be applied to a
+  struct or an enum`.
+
+### Added
+
+- A struct with no stored properties and an enum with no cases now warn.
+  Both previously expanded to nothing in silence.
+
 ### Fixed
 
 - `fake()` now mirrors the memberwise initializer exactly. `static` properties

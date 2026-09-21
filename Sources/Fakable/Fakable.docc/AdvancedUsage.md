@@ -49,7 +49,7 @@ A struct with no stored properties generates nothing, which is not an error.
 1. The first case **without** associated values, wherever it appears — it needs
    no values invented for it, so it always wins.
 2. Otherwise the first case, with each associated value defaulted.
-3. An enum with no cases generates nothing.
+3. An enum with no cases generates nothing, and the macro warns.
 
 ```swift
 @Fakable
@@ -124,11 +124,14 @@ construct the models without `fake()`.
 ## Errors
 
 Attaching ``Fakable()`` to anything other than a struct or an enum is a
-compile-time error:
+compile-time error, reported on the attribute itself:
 
 ```
-@Fakable can only be applied to a struct or enum
+'@Fakable' can only be applied to a struct or an enum
 ```
 
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
+
+A struct with no stored properties and an enum with no cases each warn instead:
+the declaration is valid, and the attribute simply had nothing to do.

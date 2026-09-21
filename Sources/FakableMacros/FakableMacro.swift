@@ -1,3 +1,4 @@
+import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
@@ -13,33 +14,42 @@ public struct FakableMacro: MemberMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        // Extract access level (public, internal, etc.)
-        let accessLevel = extractAccessLevel(from: declaration)
-
-        // Handle struct declarations
         if let structDecl = declaration.as(StructDeclSyntax.self) {
             let storedProperties = FakeGenerator.storedProperties(of: structDecl)
 
             guard !storedProperties.isEmpty else {
+                context.diagnose(node, .noStoredProperties)
                 return []
             }
 
-            let fakeMethod = FakeGenerator.fakeMethod(for: storedProperties, accessLevel: accessLevel)
+            let fakeMethod = FakeGenerator.fakeMethod(
+                for: storedProperties,
+                accessLevel: extractAccessLevel(from: declaration)
+            )
             return [DeclSyntax(stringLiteral: fakeMethod)]
         }
 
-        // Handle enum declarations
         if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-            let firstCase = FakeGenerator.firstCase(of: enumDecl)
-
-            guard let firstCase else {
+            guard let firstCase = FakeGenerator.firstCase(of: enumDecl) else {
+                context.diagnose(node, .noCases)
                 return []
             }
 
-            let fakeMethod = FakeGenerator.enumFakeMethod(firstCase: firstCase, accessLevel: accessLevel)
+            let fakeMethod = FakeGenerator.enumFakeMethod(
+                firstCase: firstCase,
+                accessLevel: extractAccessLevel(from: declaration)
+            )
             return [DeclSyntax(stringLiteral: fakeMethod)]
         }
 
-        throw FakableError.onlyApplicableToStructOrEnum
+        context.diagnose(node, .unsupportedDeclaration)
+        return []
+    }
+}
+
+extension MacroExpansionContext {
+    /// Reports `diagnostic` against the attribute the macro was written on.
+    fileprivate func diagnose(_ node: AttributeSyntax, _ diagnostic: FakableDiagnostic) {
+        diagnose(Diagnostic(node: node, message: diagnostic))
     }
 }

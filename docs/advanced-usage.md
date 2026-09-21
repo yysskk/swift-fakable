@@ -84,8 +84,8 @@ custom `init` in an extension to keep both.
 
 ### A struct with no stored properties
 
-Nothing is generated, and that is not an error. There would be no parameters
-to default and no initializer call to make.
+Nothing is generated, and the macro warns: there would be no parameters to
+default and no initializer call to make, so the attribute had no effect.
 
 ## Enums
 
@@ -95,7 +95,7 @@ to default and no initializer call to make.
    declaration. It needs no values invented for it, so it is always preferred.
 2. If every case has associated values, the **first case**, with each value
    filled in from the default table.
-3. If the enum has no cases at all, nothing is generated.
+3. If the enum has no cases at all, nothing is generated and the macro warns.
 
 ```swift
 @Fakable
@@ -221,11 +221,19 @@ built with `-D DEBUG`, or construct them without `fake()`.
 ## Errors
 
 Attaching `@Fakable` to anything other than a struct or an enum is a
-compile-time error:
+compile-time error, reported on the attribute itself:
 
 ```
-@Fakable can only be applied to a struct or enum
+'@Fakable' can only be applied to a struct or an enum
 ```
 
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
+
+Two more cases warn rather than fail, because the declaration is valid and the
+attribute simply had nothing to do:
+
+```
+'@Fakable' generates nothing for a struct with no stored properties
+'@Fakable' generates nothing for an enum with no cases
+```
