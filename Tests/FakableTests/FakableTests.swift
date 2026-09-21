@@ -56,6 +56,49 @@ struct TestNested {
     let person: TestPerson
 }
 
+@Fakable
+struct TestCounter {
+    let id: String
+    var count: Int {
+        didSet {
+            lastSetCount = count
+        }
+    }
+}
+
+nonisolated(unsafe) private var lastSetCount = 0
+
+@Fakable
+struct TestConfig {
+    static let shared: String = "shared"
+    let id: String
+}
+
+@Fakable
+struct TestPoint {
+    let x: Int, y: Int
+}
+
+@Fakable
+struct TestSize {
+    let width, height: Int
+}
+
+@Fakable
+struct TestVersioned {
+    let name: String
+    let version: Int = 5
+    var revision: Int = 7
+}
+
+@Fakable
+struct TestComputed {
+    let name: String
+    var label: String {
+        name
+    }
+}
+
 // Runtime tests
 
 @Suite("Fakable Runtime Tests")
@@ -222,5 +265,55 @@ struct FakableRuntimeTests {
         } else {
             Issue.record("Expected .success(value: 0, message: \"\", isValid: false), got \(result)")
         }
+    }
+
+    @Test("Property observer is a fake() parameter")
+    func testPropertyObserver() {
+        let counter = TestCounter.fake()
+
+        #expect(counter.id == "")
+        #expect(counter.count == 0)
+        #expect(TestCounter.fake(id: "a", count: 3).count == 3)
+    }
+
+    @Test("Static property is not a fake() parameter")
+    func testStaticProperty() {
+        #expect(TestConfig.fake().id == "")
+        #expect(TestConfig.shared == "shared")
+    }
+
+    @Test("Every binding of a declaration is a fake() parameter")
+    func testSeveralBindingsPerDeclaration() {
+        let origin = TestPoint.fake()
+
+        #expect(origin.x == 0)
+        #expect(origin.y == 0)
+
+        let point = TestPoint.fake(x: 1, y: 2)
+
+        #expect(point.x == 1)
+        #expect(point.y == 2)
+    }
+
+    @Test("Bindings sharing one type annotation are each a fake() parameter")
+    func testSharedTypeAnnotation() {
+        let size = TestSize.fake(width: 3, height: 4)
+
+        #expect(size.width == 3)
+        #expect(size.height == 4)
+    }
+
+    @Test("Constant with a value keeps its own value")
+    func testInitializedConstant() {
+        let versioned = TestVersioned.fake(name: "a", revision: 9)
+
+        #expect(versioned.name == "a")
+        #expect(versioned.version == 5)
+        #expect(versioned.revision == 9)
+    }
+
+    @Test("Computed property is not a fake() parameter")
+    func testComputedProperty() {
+        #expect(TestComputed.fake(name: "a").label == "a")
     }
 }
