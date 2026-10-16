@@ -68,6 +68,41 @@ struct GenericMacroTests {
             macros: testMacros
         )
     }
+    @Test("Longhand collection of a generic parameter keeps its default")
+    func fakableWithLonghandGenericCollections() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Crate<Element> {
+                let items: Array<Element>
+                let mapping: Dictionary<String, Element>
+                let first: Optional<Element>
+            }
+            """,
+            expandedSource: """
+                struct Crate<Element> {
+                    let items: Array<Element>
+                    let mapping: Dictionary<String, Element>
+                    let first: Optional<Element>
+
+                    #if DEBUG
+                    static func fake(
+                        items: Array<Element> = [],
+                        mapping: Dictionary<String, Element> = [:],
+                        first: Optional<Element> = nil
+                    ) -> Self {
+                        Self(
+                            items: items,
+                            mapping: mapping,
+                            first: first
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 
     @Test("Type merely sharing a prefix with a generic parameter keeps its default")
     func fakableWithSimilarlyNamedType() {

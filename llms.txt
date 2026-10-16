@@ -15,20 +15,20 @@ swift-fakable provides a single `@Fakable` macro that you attach to a struct or 
 - `Double`, `Float`, `CGFloat`, `TimeInterval` → `0.0`
 - `Bool` → `false`
 - `Decimal` → `0`, `Date` → `Date(timeIntervalSince1970: 0)`, `UUID` → the nil UUID, `URL` → `URL(fileURLWithPath: "/")`, `Data` → `Data()`
-- `T?` / `T!` → `nil` (checked before the type name)
+- `T?` / `T!` / `Optional<T>` → `nil` (checked before the type name)
 - a generic parameter of the enclosing type → no default; the parameter is required
-- `[K: V]` → `[:]` (checked before array)
-- `[T]` → `[]`, `Set<T>` → `[]`
+- `[K: V]` / `Dictionary<K, V>` → `[:]`
+- `[T]` / `Array<T>` → `[]`, `Set<T>` → `[]`
 - anything else → `.fake()`, so nested models compose when each is `@Fakable`
 
-Matching is on the written spelling, so a type alias for `String` resolves to `.fake()`, not `""`. Every default is deterministic, so two fakes of the same model are equal where the model is `Equatable`.
+Matching is on the written spelling, so a type alias for `String` resolves to `.fake()`, not `""`. The spelling is read from the syntax tree rather than from the text, so sugar and longhand agree and a `Swift.` or `Foundation.` qualifier is dropped; a type nested in one of your own, such as `Models.Date`, keeps the `.fake()` fallback. Every default is deterministic, so two fakes of the same model are equal where the model is `Equatable`.
 
 ## Key Features
 
 - Structs and enums, with or without associated values
 - Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
-- Arrays, dictionaries, and sets, including nested generic spellings
+- Arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
 - Labeled and unlabeled enum associated values
 - Nested `@Fakable` models through the `.fake()` fallback

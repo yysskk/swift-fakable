@@ -132,15 +132,20 @@ static func fake() -> Self {
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
-| `Array` (`[T]`) | `[]` |
-| `Dictionary` (`[K: V]`) | `[:]` |
+| `Array` (`[T]` or `Array<T>`) | `[]` |
+| `Dictionary` (`[K: V]` or `Dictionary<K, V>`) | `[:]` |
 | `Set` (`Set<T>`) | `[]` |
-| `Optional` (`T?`, `T!`) | `nil` |
+| `Optional` (`T?`, `T!`, or `Optional<T>`) | `nil` |
 | a generic parameter of the type | none — the parameter is required |
 | anything else | `.fake()` |
 
 Every default is deterministic, so two fakes of the same model are equal where
 the model is `Equatable`.
+
+Sugar and longhand name the same type, so `[String]` and `Array<String>` both
+take `[]`, and `String?` and `Optional<String>` both take `nil`. A module
+qualifier is dropped as well: `Swift.String` and `Foundation.Date` take the
+defaults `String` and `Date` take.
 
 A generic parameter has no value the macro could write, so `fake()` asks for it
 instead:
@@ -216,7 +221,7 @@ expands at compile time and cannot read a value computed at run time.
 - Enums with or without associated values
 - Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
-- Arrays, dictionaries, and sets, including nested generic spellings
+- Arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
@@ -276,7 +281,11 @@ expands at compile time and cannot read a value computed at run time.
   `@Fakable` to it, or pass an explicit value at the call site.
 - Types are matched by their written spelling, so a type alias for `String`
   resolves to `.fake()` rather than `""`, and a type of your own named `Date`
-  or `URL` takes the Foundation default rather than `.fake()`.
+  or `URL` takes the Foundation default rather than `.fake()`. The spelling is
+  read from the syntax tree rather than from the text, so sugar and longhand
+  agree (`[String]` and `Array<String>`), and a `Swift.` or `Foundation.`
+  qualifier is dropped. A type nested in one of your own, such as
+  `Models.Date`, keeps the `.fake()` fallback.
 - A generic enum is an error only when *every* case carries a generic
   associated value: `fake()` takes no parameters, so there is nowhere to get the
   value from. A case with no associated values, or one whose values are not

@@ -100,6 +100,153 @@ struct BasicMacroTests {
             macros: testMacros
         )
     }
+    @Test("Bracket sugar resolves whatever it nests")
+    func fakableWithNestedBracketSugar() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Catalog {
+                let grouped: [String: [Int]]
+                let matrix: [[String]]
+                let name: String!
+            }
+            """,
+            expandedSource: """
+                struct Catalog {
+                    let grouped: [String: [Int]]
+                    let matrix: [[String]]
+                    let name: String!
+
+                    #if DEBUG
+                    static func fake(
+                        grouped: [String: [Int]] = [:],
+                        matrix: [[String]] = [],
+                        name: String! = nil
+                    ) -> Self {
+                        Self(
+                            grouped: grouped,
+                            matrix: matrix,
+                            name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Longhand generic spelling resolves like its sugar")
+    func fakableWithLonghandGenericSpelling() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Inventory {
+                let name: Optional<String>
+                let items: Array<String>
+                let mapping: Dictionary<String, Int>
+                let tags: Set<String>
+            }
+            """,
+            expandedSource: """
+                struct Inventory {
+                    let name: Optional<String>
+                    let items: Array<String>
+                    let mapping: Dictionary<String, Int>
+                    let tags: Set<String>
+
+                    #if DEBUG
+                    static func fake(
+                        name: Optional<String> = nil,
+                        items: Array<String> = [],
+                        mapping: Dictionary<String, Int> = [:],
+                        tags: Set<String> = []
+                    ) -> Self {
+                        Self(
+                            name: name,
+                            items: items,
+                            mapping: mapping,
+                            tags: tags
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Module-qualified spelling resolves like its bare name")
+    func fakableWithModuleQualifiedSpelling() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Entry {
+                let name: Swift.String
+                let count: Swift.Int
+                let createdAt: Foundation.Date
+                let payload: Foundation.Data
+                let items: Swift.Array<Swift.String>
+            }
+            """,
+            expandedSource: """
+                struct Entry {
+                    let name: Swift.String
+                    let count: Swift.Int
+                    let createdAt: Foundation.Date
+                    let payload: Foundation.Data
+                    let items: Swift.Array<Swift.String>
+
+                    #if DEBUG
+                    static func fake(
+                        name: Swift.String = "",
+                        count: Swift.Int = 0,
+                        createdAt: Foundation.Date = Date(timeIntervalSince1970: 0),
+                        payload: Foundation.Data = Data(),
+                        items: Swift.Array<Swift.String> = []
+                    ) -> Self {
+                        Self(
+                            name: name,
+                            count: count,
+                            createdAt: createdAt,
+                            payload: payload,
+                            items: items
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Type nested in a type of your own keeps the .fake() fallback")
+    func fakableWithNestedTypeSpelling() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Booking {
+                let slot: Models.Date
+            }
+            """,
+            expandedSource: """
+                struct Booking {
+                    let slot: Models.Date
+
+                    #if DEBUG
+                    static func fake(
+                        slot: Models.Date = .fake()
+                    ) -> Self {
+                        Self(
+                            slot: slot
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 
     @Test("Foundation value types use their empty defaults")
     func fakableWithFoundationValueTypes() {
