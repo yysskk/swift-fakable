@@ -159,3 +159,27 @@ struct TestReceipt {
     let duration: TimeInterval
     let tags: Set<String>
 }
+
+@Fakable
+struct TestLonghandContainer {
+    let name: Optional<String>
+    let items: Array<String>
+    let mapping: Dictionary<String, Int>
+    let tags: Set<String>
+}
+
+@Fakable
+struct TestQualifiedEntry {
+    let name: Swift.String
+    let count: Swift.Int
+    let createdAt: Foundation.Date
+    let payload: Foundation.Data
+    let items: Swift.Array<Swift.String>
+}
+
+@Fakable
+struct TestNestedCollectionContainer {
+    let grouped: [String: [Int]]
+    let matrix: [[String]]
+    let name: String!
+}

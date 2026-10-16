@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wins over the generic-parameter rule the same way they do. Every value is
   deterministic, so two fakes of the same model are equal where the model is
   `Equatable`.
+- A module-qualified spelling takes the default its bare name takes, so
+  `Swift.String` fakes as `""` and `Foundation.Date` as the epoch. Only
+  `Swift`, `Foundation`, and `CoreGraphics` count as qualifiers; a type nested
+  in one of your own, such as `Models.Date`, keeps the `.fake()` fallback.
 
 ### Changed
 
@@ -28,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Optional<T>`, `Array<T>`, and `Dictionary<K, V>` written longhand now
+  resolve to `nil`, `[]`, and `[:]`, the same as `T?`, `[T]`, and `[K: V]`.
+  They used to fall through to `.fake()` and fail to compile with
+  `value of type 'Optional<String>' has no member 'fake'`, because the macro
+  read the text of the type rather than the syntax node. Which collection a
+  type is now comes from the node, so `[String: [Int]]` is a dictionary
+  because the node says so rather than because the text holds a colon.
 - The advanced usage guide no longer advises annotating a `let` that already has
   a value to include it in `fake()`. A constant with a value is not in the
   memberwise initializer, so it has to become a `var`.

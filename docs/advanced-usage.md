@@ -141,23 +141,29 @@ enum Event {
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
-| `T?` or `T!` | `nil` |
-| `[K: V]` | `[:]` |
-| `[T]` | `[]` |
+| `T?`, `T!`, or `Optional<T>` | `nil` |
+| `[K: V]` or `Dictionary<K, V>` | `[:]` |
+| `[T]` or `Array<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | anything else | `.fake()` |
 
 The same table is used for struct properties and for enum associated values.
 
-Five details are worth spelling out:
+Six details are worth spelling out:
 
 - **Optional wins first.** `String?` is `nil`, not `""`. This is checked before
   the type name, so an optional of any type defaults to `nil`.
-- **Dictionary is checked before array.** Both are spelled with brackets, so
-  `[String: Int]` is matched by the presence of a colon and resolves to `[:]`;
-  `[String]` resolves to `[]`. A nested spelling such as `[String: [Int]]`
-  contains a colon and is treated as a dictionary, which is correct.
+- **Sugar and longhand are the same type.** Which collection a type is comes
+  from the syntax node rather than from the text, so `[String]` and
+  `Array<String>` both resolve to `[]`, `[String: Int]` and
+  `Dictionary<String, Int>` both to `[:]`, and `String?`, `String!` and
+  `Optional<String>` all to `nil`. A nested spelling such as `[String: [Int]]`
+  is a dictionary rather than an array for the same reason.
+- **A module qualifier is dropped.** `Swift.String` takes the default `String`
+  takes, and `Foundation.Date` the one `Date` takes. Only `Swift`, `Foundation`,
+  and `CoreGraphics` count as qualifiers, so a type nested inside one of your
+  own, such as `Models.Date`, keeps the `.fake()` fallback.
 - **A Foundation value type gets a deterministic value.** `Date` is the epoch
   rather than `Date()`, and `UUID` is the nil UUID rather than a fresh one, so
   two fakes of the same model are equal where the model is `Equatable`. Pass the

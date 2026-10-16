@@ -1,5 +1,12 @@
 import SwiftSyntax
 
+/// The modules whose types the default table knows by name.
+///
+/// A qualified spelling such as `Swift.String` or `Foundation.Date` names the
+/// same type as the bare one, so it takes the same default. A type nested in
+/// one of your own, such as `Models.Date`, keeps its base and does not.
+private let qualifyingModuleNames: Set<String> = ["CoreGraphics", "Foundation", "Swift"]
+
 /// Resolves the value `fake()` uses for a parameter of a given type.
 ///
 /// The same rules apply to a struct's stored properties and to an enum case's
@@ -13,17 +20,21 @@ enum DefaultValue {
     ///
     /// - Parameters:
     ///   - type: The type as it was written. Matching is on that spelling, since
-    ///     the macro reads syntax and never resolves types.
+    ///     the macro reads syntax and never resolves types. Sugar and longhand
+    ///     are read from the syntax tree rather than from the text, so
+    ///     `Optional<String>` is the same type to the table as `String?`,
+    ///     `Array<String>` as `[String]`, and `Dictionary<String, Int>` as
+    ///     `[String: Int]`.
     ///   - genericParameterNames: The names the enclosing declaration introduces.
     ///     A type built from one of these has no value the macro could write, so
     ///     it resolves to `nil` rather than to `.fake()`.
     static func resolve(for type: TypeSyntax, genericParameterNames: Set<String>) -> String? {
-        if type.is(OptionalTypeSyntax.self) || type.is(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
+        // Ahead of the type name, so an optional of any type is nil.
+        if type.isOptional {
             return "nil"
         }
 
-        let spelling = type.trimmedDescription
-        switch spelling {
+        switch type.unqualifiedSpelling {
         case "String":
             return "\"\""
         case "Int", "Int8", "Int16", "Int32", "Int64",
@@ -50,16 +61,12 @@ enum DefaultValue {
         case "Data":
             return "Data()"
         default:
-            // Dictionary check must come before Array check
-            if spelling.hasPrefix("[") && spelling.contains(":") && spelling.hasSuffix("]") {
+            // Ahead of the generic check, so a collection is empty for the same
+            // reason whatever it holds: the element type is never written out.
+            if type.isDictionary {
                 return "[:]"
             }
-            if spelling.hasPrefix("[") && spelling.hasSuffix("]") {
-                return "[]"
-            }
-            // Ahead of the generic check, so Set<T> is empty for the same reason
-            // [T] is: the element type never has to be written.
-            if type.isSet {
+            if type.isArray || type.isSet {
                 return "[]"
             }
             if type.references(anyOf: genericParameterNames) {
@@ -73,12 +80,47 @@ enum DefaultValue {
 }
 
 extension TypeSyntax {
+    /// Whether the type is an optional, however it is written.
+    ///
+    /// Covers the `String?` and `String!` sugar as well as the longhand
+    /// `Optional<String>`.
+    var isOptional: Bool {
+        self.is(OptionalTypeSyntax.self)
+            || self.is(ImplicitlyUnwrappedOptionalTypeSyntax.self)
+            || nominalName == "Optional"
+    }
+
+    /// Whether the type is an array, however it is written.
+    ///
+    /// Covers the `[String]` sugar as well as the longhand `Array<String>`.
+    var isArray: Bool {
+        self.is(ArrayTypeSyntax.self) || nominalName == "Array"
+    }
+
+    /// Whether the type is a dictionary, however it is written.
+    ///
+    /// Covers the `[String: Int]` sugar as well as the longhand
+    /// `Dictionary<String, Int>`. A nested spelling such as `[String: [Int]]`
+    /// is a dictionary and not an array, because the node says which it is.
+    var isDictionary: Bool {
+        self.is(DictionaryTypeSyntax.self) || nominalName == "Dictionary"
+    }
+
     /// Whether the type is a `Set`, however its element type is spelled.
     ///
-    /// Read from the syntax node rather than from the spelling, so a type whose
-    /// name merely starts with `Set` does not count as one.
+    /// A set has no sugar of its own, so `Set<String>` is the only way to write
+    /// one.
     var isSet: Bool {
-        self.as(IdentifierTypeSyntax.self)?.name.text == "Set"
+        nominalName == "Set"
+    }
+
+    /// The type's spelling with any module qualification dropped.
+    ///
+    /// `Swift.String` gives `String`, so a qualified spelling takes the same
+    /// default as the bare one. Generic arguments are kept, so a type of your
+    /// own named `Date<Wrapped>` is not mistaken for `Foundation.Date`.
+    var unqualifiedSpelling: String {
+        unqualified.trimmedDescription
     }
 
     /// Whether the type is written in terms of any of `names`.
@@ -96,6 +138,37 @@ extension TypeSyntax {
             }
             return false
         }
+    }
+
+    /// The name the nominal type is written with, module qualification dropped,
+    /// or `nil` for a type that is not written as a name.
+    ///
+    /// Read from the syntax node rather than from the spelling, so a type whose
+    /// name merely starts with `Set` does not count as one. The sugar `[Int]`
+    /// names nothing and gives `nil`, which is why each collection test takes
+    /// the sugared node into account as well.
+    private var nominalName: String? {
+        unqualified.as(IdentifierTypeSyntax.self)?.name.text
+    }
+
+    /// The type with a qualifying module name dropped from the front.
+    ///
+    /// Only the modules the default table draws from are dropped. `Outer.Inner`
+    /// keeps its base, since `Inner` on its own could name anything.
+    private var unqualified: TypeSyntax {
+        guard let member = self.as(MemberTypeSyntax.self),
+            let moduleName = member.baseType.as(IdentifierTypeSyntax.self)?.name.text,
+            qualifyingModuleNames.contains(moduleName)
+        else {
+            return self
+        }
+
+        return TypeSyntax(
+            IdentifierTypeSyntax(
+                name: member.name,
+                genericArgumentClause: member.genericArgumentClause
+            )
+        )
     }
 }
 

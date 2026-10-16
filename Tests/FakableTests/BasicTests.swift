@@ -43,6 +43,72 @@ struct BasicTests {
         #expect(container.metadata == ["key": 42])
         #expect(container.count == 3)
     }
+    @Test("Struct with longhand collections uses the same defaults as the sugar")
+    func testLonghandCollectionDefaults() {
+        let container = TestLonghandContainer.fake()
+
+        #expect(container.name == nil)
+        #expect(container.items.isEmpty)
+        #expect(container.mapping.isEmpty)
+        #expect(container.tags.isEmpty)
+    }
+
+    @Test("Struct with longhand collections accepts custom values")
+    func testLonghandCollectionCustomValues() {
+        let container = TestLonghandContainer.fake(
+            name: "box",
+            items: ["a", "b"],
+            mapping: ["key": 42],
+            tags: ["new"]
+        )
+
+        #expect(container.name == "box")
+        #expect(container.items == ["a", "b"])
+        #expect(container.mapping == ["key": 42])
+        #expect(container.tags == ["new"])
+    }
+
+    @Test("Struct with module-qualified types uses the same defaults as the bare names")
+    func testModuleQualifiedDefaults() {
+        let entry = TestQualifiedEntry.fake()
+
+        #expect(entry.name == "")
+        #expect(entry.count == 0)
+        #expect(entry.createdAt == Date(timeIntervalSince1970: 0))
+        #expect(entry.payload.isEmpty)
+        #expect(entry.items.isEmpty)
+    }
+
+    @Test("Struct with module-qualified types accepts custom values")
+    func testModuleQualifiedCustomValues() {
+        let entry = TestQualifiedEntry.fake(name: "entry", count: 7, items: ["a"])
+
+        #expect(entry.name == "entry")
+        #expect(entry.count == 7)
+        #expect(entry.items == ["a"])
+    }
+
+    @Test("Struct with nested collection sugar uses empty defaults")
+    func testNestedCollectionDefaults() {
+        let container = TestNestedCollectionContainer.fake()
+
+        #expect(container.grouped.isEmpty)
+        #expect(container.matrix.isEmpty)
+        #expect(container.name == nil)
+    }
+
+    @Test("Struct with nested collection sugar accepts custom values")
+    func testNestedCollectionCustomValues() {
+        let container = TestNestedCollectionContainer.fake(
+            grouped: ["a": [1, 2]],
+            matrix: [["x"], ["y"]],
+            name: "grid"
+        )
+
+        #expect(container.grouped == ["a": [1, 2]])
+        #expect(container.matrix == [["x"], ["y"]])
+        #expect(container.name == "grid")
+    }
 
     @Test("Struct with Foundation value types uses empty defaults")
     func testFoundationValueDefaults() {

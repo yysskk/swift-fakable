@@ -83,16 +83,21 @@ Labels on associated values are preserved when present and omitted when not:
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
-| `T?` or `T!` | `nil` |
-| `[K: V]` | `[:]` |
-| `[T]` | `[]` |
+| `T?`, `T!`, or `Optional<T>` | `nil` |
+| `[K: V]` or `Dictionary<K, V>` | `[:]` |
+| `[T]` or `Array<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | anything else | `.fake()` |
 
 - **Optional wins first.** `String?` is `nil`, not `""`.
-- **Dictionary is checked before array**, by the presence of a colon inside the
-  brackets, so `[String: Int]` is `[:]` and `[String]` is `[]`.
+- **Sugar and longhand are the same type**, since which collection a type is
+  comes from the syntax node rather than from the text: `[String]` and
+  `Array<String>` are both `[]`, `[String: Int]` and `Dictionary<String, Int>`
+  both `[:]`, and `String?`, `String!`, and `Optional<String>` all `nil`.
+- **A module qualifier is dropped**, so `Swift.String` and `Foundation.Date`
+  take the defaults `String` and `Date` take. Only `Swift`, `Foundation`, and
+  `CoreGraphics` count as qualifiers; `Models.Date` keeps the `.fake()` fallback.
 - **A Foundation value type gets a deterministic value**: `Date` is the epoch
   and `UUID` is the nil UUID, so two fakes of the same model are equal.
 - **Matching is on the written spelling.** `typealias UserID = String` resolves
