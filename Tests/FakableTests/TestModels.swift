@@ -1,4 +1,5 @@
 import Fakable
+import Foundation
 
 // The models every runtime suite in this target builds fixtures from.
 
@@ -140,4 +141,21 @@ struct TestAlwaysFaked {
 @Fakable(condition: .custom("FAKABLE_RUNTIME_TEST_CONDITION"))
 struct TestConditionallyFaked {
     let id: String
+}
+
+@Fakable
+struct TestSearchKeyword: Codable, Equatable, Sendable {
+    let keyword: String
+    let updateDate: Date
+}
+
+@Fakable
+struct TestReceipt {
+    let id: UUID
+    let issuedAt: Date
+    let endpoint: URL
+    let payload: Data
+    let amount: Decimal
+    let duration: TimeInterval
+    let tags: Set<String>
 }

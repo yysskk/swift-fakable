@@ -125,13 +125,22 @@ static func fake() -> Self {
 | `String` | `""` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64` | `0` |
-| `Double`, `Float`, `CGFloat` | `0.0` |
+| `Double`, `Float`, `CGFloat`, `TimeInterval` | `0.0` |
 | `Bool` | `false` |
+| `Decimal` | `0` |
+| `Date` | `Date(timeIntervalSince1970: 0)` |
+| `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
+| `URL` | `URL(fileURLWithPath: "/")` |
+| `Data` | `Data()` |
 | `Array` (`[T]`) | `[]` |
 | `Dictionary` (`[K: V]`) | `[:]` |
+| `Set` (`Set<T>`) | `[]` |
 | `Optional` (`T?`, `T!`) | `nil` |
 | a generic parameter of the type | none — the parameter is required |
 | anything else | `.fake()` |
+
+Every default is deterministic, so two fakes of the same model are equal where
+the model is `Equatable`.
 
 A generic parameter has no value the macro could write, so `fake()` asks for it
 instead:
@@ -207,7 +216,8 @@ expands at compile time and cannot read a value computed at run time.
 - Enums with or without associated values
 - Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
-- Arrays and dictionaries, including nested generic spellings
+- Arrays, dictionaries, and sets, including nested generic spellings
+- Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
@@ -265,7 +275,8 @@ expands at compile time and cannot read a value computed at run time.
   no `fake()`, the error surfaces at compile time in the generated code; add
   `@Fakable` to it, or pass an explicit value at the call site.
 - Types are matched by their written spelling, so a type alias for `String`
-  resolves to `.fake()` rather than `""`.
+  resolves to `.fake()` rather than `""`, and a type of your own named `Date`
+  or `URL` takes the Foundation default rather than `.fake()`.
 - A generic enum is an error only when *every* case carries a generic
   associated value: `fake()` takes no parameters, so there is nowhere to get the
   value from. A case with no associated values, or one whose values are not

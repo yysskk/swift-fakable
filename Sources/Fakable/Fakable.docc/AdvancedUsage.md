@@ -76,17 +76,25 @@ Labels on associated values are preserved when present and omitted when not:
 | `String` | `""` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64` | `0` |
-| `Double`, `Float`, `CGFloat` | `0.0` |
+| `Double`, `Float`, `CGFloat`, `TimeInterval` | `0.0` |
 | `Bool` | `false` |
+| `Decimal` | `0` |
+| `Date` | `Date(timeIntervalSince1970: 0)` |
+| `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
+| `URL` | `URL(fileURLWithPath: "/")` |
+| `Data` | `Data()` |
 | `T?` or `T!` | `nil` |
 | `[K: V]` | `[:]` |
 | `[T]` | `[]` |
+| `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | anything else | `.fake()` |
 
 - **Optional wins first.** `String?` is `nil`, not `""`.
 - **Dictionary is checked before array**, by the presence of a colon inside the
   brackets, so `[String: Int]` is `[:]` and `[String]` is `[]`.
+- **A Foundation value type gets a deterministic value**: `Date` is the epoch
+  and `UUID` is the nil UUID, so two fakes of the same model are equal.
 - **Matching is on the written spelling.** `typealias UserID = String` resolves
   to `.fake()`, not `""`. Write the underlying type, make the alias target
   `@Fakable`, or pass the value explicitly.

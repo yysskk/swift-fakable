@@ -23,9 +23,12 @@
 ///
 /// - `String`: `""`
 /// - `Int`, `UInt`, and the sized integer types: `0`
-/// - `Double`, `Float`, `CGFloat`: `0.0`
+/// - `Double`, `Float`, `CGFloat`, `TimeInterval`: `0.0`
 /// - `Bool`: `false`
-/// - `Array` (`[T]`): `[]`
+/// - `Decimal`: `0`
+/// - `Date`: the epoch; `UUID`: the nil UUID; `URL`: `URL(fileURLWithPath: "/")`;
+///   `Data`: `Data()`
+/// - `Array` (`[T]`) and `Set` (`Set<T>`): `[]`
 /// - `Dictionary` (`[K: V]`): `[:]`
 /// - `Optional`: `nil`
 /// - any other type: `.fake()`, so that type needs `@Fakable` too

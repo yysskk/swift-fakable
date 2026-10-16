@@ -1,4 +1,5 @@
 import Fakable
+import Foundation
 import Testing
 
 @Suite("Basic Tests")
@@ -41,6 +42,47 @@ struct BasicTests {
         #expect(container.items == ["a", "b", "c"])
         #expect(container.metadata == ["key": 42])
         #expect(container.count == 3)
+    }
+
+    @Test("Struct with Foundation value types uses empty defaults")
+    func testFoundationValueDefaults() {
+        let receipt = TestReceipt.fake()
+
+        #expect(receipt.id.uuidString == "00000000-0000-0000-0000-000000000000")
+        #expect(receipt.issuedAt == Date(timeIntervalSince1970: 0))
+        #expect(receipt.endpoint == URL(fileURLWithPath: "/"))
+        #expect(receipt.payload.isEmpty)
+        #expect(receipt.amount == 0)
+        #expect(receipt.duration == 0)
+        #expect(receipt.tags.isEmpty)
+    }
+
+    @Test("Struct with Foundation value types accepts custom values")
+    func testFoundationValueCustomValues() {
+        let receipt = TestReceipt.fake(
+            issuedAt: Date(timeIntervalSince1970: 1_000),
+            amount: 1_200,
+            tags: ["book", "sale"]
+        )
+
+        #expect(receipt.issuedAt == Date(timeIntervalSince1970: 1_000))
+        #expect(receipt.amount == 1_200)
+        #expect(receipt.tags == ["book", "sale"])
+    }
+
+    @Test("Foundation defaults do not change between two fakes")
+    func testFoundationValueDefaultsAreDeterministic() {
+        #expect(TestSearchKeyword.fake() == TestSearchKeyword.fake())
+        #expect(TestReceipt.fake().id == TestReceipt.fake().id)
+        #expect(TestReceipt.fake().issuedAt == TestReceipt.fake().issuedAt)
+    }
+
+    @Test("Codable model with a Date needs no values of its own")
+    func testCodableModelWithDate() {
+        let keyword = TestSearchKeyword.fake()
+
+        #expect(keyword.keyword == "")
+        #expect(keyword.updateDate == Date(timeIntervalSince1970: 0))
     }
 
     @Test("Nested structs use .fake() for custom types")

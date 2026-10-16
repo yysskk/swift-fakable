@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Foundation value types have a default, so a model carrying one no longer needs
+  a value at every call site. `Date` fakes as the epoch, `UUID` as the nil UUID,
+  `URL` as `URL(fileURLWithPath: "/")`, `Data` as `Data()`, `Decimal` as `0`,
+  and `TimeInterval` as `0.0`. `Set<T>` joins `[T]` and `[K: V]` at `[]`, and
+  wins over the generic-parameter rule the same way they do. Every value is
+  deterministic, so two fakes of the same model are equal where the model is
+  `Equatable`.
+
+### Changed
+
+- A property of one of those types used to fall through to `.fake()` and fail to
+  compile with `value of type 'Date' has no member 'fake'`. A project that
+  worked around that with an `extension Date { static func fake() }` of its own
+  now gets the built-in value instead, as does a project with a type of its own
+  named `Date`, `UUID`, `URL`, `Data`, `Decimal`, or `TimeInterval`. Types are
+  still matched on their written spelling.
+
+### Fixed
+
+- The advanced usage guide no longer advises annotating a `let` that already has
+  a value to include it in `fake()`. A constant with a value is not in the
+  memberwise initializer, so it has to become a `var`.
+
 ## [0.2.0] - 2026-09-21
 
 ### Changed

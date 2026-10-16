@@ -7,6 +7,10 @@ import SwiftSyntax
 enum DefaultValue {
     /// The value to use for `type`, or `nil` when none can be written for it.
     ///
+    /// The table covers the stdlib types that have an obvious empty value, the
+    /// Foundation value types that stand in for one, and the collections. Every
+    /// value is deterministic, so two fakes of the same type compare equal.
+    ///
     /// - Parameters:
     ///   - type: The type as it was written. Matching is on that spelling, since
     ///     the macro reads syntax and never resolves types.
@@ -25,16 +29,37 @@ enum DefaultValue {
         case "Int", "Int8", "Int16", "Int32", "Int64",
             "UInt", "UInt8", "UInt16", "UInt32", "UInt64":
             return "0"
-        case "Double", "Float", "CGFloat":
+        case "Double", "Float", "CGFloat", "TimeInterval":
             return "0.0"
         case "Bool":
             return "false"
+        case "Decimal":
+            // Decimal is ExpressibleByIntegerLiteral, so the literal is enough.
+            return "0"
+        case "Date":
+            // The epoch rather than Date(), so the value does not depend on when
+            // the fixture is built.
+            return "Date(timeIntervalSince1970: 0)"
+        case "UUID":
+            // The nil UUID, so the value does not change between two fakes.
+            return "UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))"
+        case "URL":
+            // The only non-failable initializer that needs no import beyond the
+            // one the property's own type already requires.
+            return "URL(fileURLWithPath: \"/\")"
+        case "Data":
+            return "Data()"
         default:
             // Dictionary check must come before Array check
             if spelling.hasPrefix("[") && spelling.contains(":") && spelling.hasSuffix("]") {
                 return "[:]"
             }
             if spelling.hasPrefix("[") && spelling.hasSuffix("]") {
+                return "[]"
+            }
+            // Ahead of the generic check, so Set<T> is empty for the same reason
+            // [T] is: the element type never has to be written.
+            if type.isSet {
                 return "[]"
             }
             if type.references(anyOf: genericParameterNames) {
@@ -48,6 +73,14 @@ enum DefaultValue {
 }
 
 extension TypeSyntax {
+    /// Whether the type is a `Set`, however its element type is spelled.
+    ///
+    /// Read from the syntax node rather than from the spelling, so a type whose
+    /// name merely starts with `Set` does not count as one.
+    var isSet: Bool {
+        self.as(IdentifierTypeSyntax.self)?.name.text == "Set"
+    }
+
     /// Whether the type is written in terms of any of `names`.
     ///
     /// Compared token by token, so a type called `Total` does not count as a
