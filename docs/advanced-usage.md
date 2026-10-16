@@ -51,8 +51,9 @@ Two of these are worth dwelling on.
 
 The type annotation requirement is the one that surprises people. The macro has
 no type information, so `let createdAt = Date()` gives it nothing to write a
-parameter type from. Annotate it (`let createdAt: Date = Date()`) to include it —
-as a `var`, since a `let` with a value is not in the memberwise initializer.
+parameter type from. Annotating it is not enough on its own, because a `let`
+that already has a value is not in the memberwise initializer either. Write it
+as `var createdAt: Date = Date()` to include it.
 
 One declaration can introduce several properties, and they each get a parameter:
 both `let x: Int, y: Int` and `let x, y: Int` yield `x` and `y`, the second by
@@ -133,17 +134,23 @@ enum Event {
 | `String` | `""` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64` | `0` |
-| `Double`, `Float`, `CGFloat` | `0.0` |
+| `Double`, `Float`, `CGFloat`, `TimeInterval` | `0.0` |
 | `Bool` | `false` |
+| `Decimal` | `0` |
+| `Date` | `Date(timeIntervalSince1970: 0)` |
+| `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
+| `URL` | `URL(fileURLWithPath: "/")` |
+| `Data` | `Data()` |
 | `T?` or `T!` | `nil` |
 | `[K: V]` | `[:]` |
 | `[T]` | `[]` |
+| `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | anything else | `.fake()` |
 
 The same table is used for struct properties and for enum associated values.
 
-Four details are worth spelling out:
+Five details are worth spelling out:
 
 - **Optional wins first.** `String?` is `nil`, not `""`. This is checked before
   the type name, so an optional of any type defaults to `nil`.
@@ -151,6 +158,10 @@ Four details are worth spelling out:
   `[String: Int]` is matched by the presence of a colon and resolves to `[:]`;
   `[String]` resolves to `[]`. A nested spelling such as `[String: [Int]]`
   contains a colon and is treated as a dictionary, which is correct.
+- **A Foundation value type gets a deterministic value.** `Date` is the epoch
+  rather than `Date()`, and `UUID` is the nil UUID rather than a fresh one, so
+  two fakes of the same model are equal where the model is `Equatable`. Pass the
+  value explicitly when a test needs a realistic one.
 - **Matching is on the written spelling.** `typealias UserID = String` resolves
   to `.fake()`, not `""`, because the macro sees the text `UserID`. Either write
   the underlying type, add `@Fakable` to the alias target, or pass the value

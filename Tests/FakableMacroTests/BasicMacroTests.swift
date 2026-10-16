@@ -101,6 +101,86 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Foundation value types use their empty defaults")
+    func fakableWithFoundationValueTypes() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Receipt {
+                let id: UUID
+                let issuedAt: Date
+                let endpoint: URL
+                let payload: Data
+                let amount: Decimal
+                let duration: TimeInterval
+            }
+            """,
+            expandedSource: """
+                struct Receipt {
+                    let id: UUID
+                    let issuedAt: Date
+                    let endpoint: URL
+                    let payload: Data
+                    let amount: Decimal
+                    let duration: TimeInterval
+
+                    #if DEBUG
+                    static func fake(
+                        id: UUID = UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)),
+                        issuedAt: Date = Date(timeIntervalSince1970: 0),
+                        endpoint: URL = URL(fileURLWithPath: "/"),
+                        payload: Data = Data(),
+                        amount: Decimal = 0,
+                        duration: TimeInterval = 0.0
+                    ) -> Self {
+                        Self(
+                            id: id,
+                            issuedAt: issuedAt,
+                            endpoint: endpoint,
+                            payload: payload,
+                            amount: amount,
+                            duration: duration
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Set uses [] as default, including a set of a generic parameter")
+    func fakableWithSet() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Catalog<Element> {
+                let tags: Set<String>
+                let entries: Set<Element>
+            }
+            """,
+            expandedSource: """
+                struct Catalog<Element> {
+                    let tags: Set<String>
+                    let entries: Set<Element>
+
+                    #if DEBUG
+                    static func fake(
+                        tags: Set<String> = [],
+                        entries: Set<Element> = []
+                    ) -> Self {
+                        Self(
+                            tags: tags,
+                            entries: entries
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
     @Test("Custom type uses .fake() as default")
     func fakableWithCustomType() {
         assertMacroExpansionForTesting(
