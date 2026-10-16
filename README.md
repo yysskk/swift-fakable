@@ -19,7 +19,7 @@ Add the package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yysskk/swift-fakable.git", from: "0.2.0")
+    .package(url: "https://github.com/yysskk/swift-fakable.git", from: "0.3.0")
 ]
 ```
 
