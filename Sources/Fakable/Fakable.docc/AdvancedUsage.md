@@ -131,6 +131,27 @@ the generated code — add ``Fakable(condition:)`` to that type, or pass the par
 explicitly. For a type from a module you do not control, passing it explicitly
 (or wrapping it in a `@Fakable` type of your own) is the way.
 
+## Overriding a default
+
+``FakeValue(_:)`` on a stored property sets the default its parameter takes,
+ahead of a declared value and of the type's default. It is the only way to give
+a `let` a default of your own:
+
+```swift
+@Fakable
+struct User {
+    @FakeValue("user@example.com")
+    let email: String
+    @FakeValue(Role.member)
+    let role: Role
+}
+```
+
+The value is type-checked before the property's type is known, so it needs a
+type of its own: write `Role.member` rather than `.member`. It applies to a
+declaration of one property, and on a `public` type it may reference only
+public declarations, since it becomes a default argument.
+
 ## Generic types
 
 A property whose type is a generic parameter becomes a **required** parameter,
@@ -215,6 +236,9 @@ initializer is an error too, reported on that `init`.
 
 A struct with no stored properties and an enum with no cases each warn instead:
 the declaration is valid, and the attribute simply had nothing to do.
+
+``FakeValue(_:)`` warns where `fake()` takes no parameter for the property or
+the type is not `@Fakable`, and is an error on anything other than a property.
 
 The `condition:` argument has two errors of its own, for a value that is not
 written literally and for a condition `#if` would reject.

@@ -85,3 +85,37 @@
 public macro Fakable(
     condition: FakeCompilationCondition = .debug
 ) = #externalMacro(module: "FakableMacros", type: "FakableMacro")
+
+/// Sets the value a `@Fakable` struct's `fake()` defaults this property to.
+///
+/// Use it when the type's default is not a useful starting point, or when the
+/// property is a `let` and so cannot declare a value of its own:
+///
+/// ```swift
+/// @Fakable
+/// struct User {
+///     @FakeValue("user@example.com")
+///     let email: String
+///     @FakeValue(Role.member)
+///     let role: Role
+/// }
+///
+/// User.fake().email // "user@example.com"
+/// ```
+///
+/// The value is written into `fake()` as a default argument, exactly as given,
+/// and takes precedence over both a declared value and the type's default.
+/// Like any attached peer macro, it applies to a declaration of one property,
+/// so split `let width, height: Int` to give each its own value.
+///
+/// - Note: The value is type-checked on its own, before the property's type is
+///   known, so it has to have a type of its own: an implicit member such as
+///   `.member` has to name its type, as in `Role.member`, and a bare `[]` or
+///   `nil` does not compile (those are the defaults already). A `public`
+///   `fake()` emits its default arguments into its callers, so the value may
+///   reference only public declarations there.
+/// - Parameter value: The value `fake()` uses when the caller passes none.
+@attached(peer)
+public macro FakeValue<Value>(
+    _ value: Value
+) = #externalMacro(module: "FakableMacros", type: "FakeValueMacro")

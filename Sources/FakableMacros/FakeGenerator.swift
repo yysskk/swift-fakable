@@ -16,6 +16,9 @@ enum FakeGenerator {
     /// A property whose type is inferred is also left out: the macro reads
     /// syntax, not types, so there is nothing to write a parameter type from.
     ///
+    /// A property marked `@FakeValue` defaults to the value the attribute
+    /// holds, ahead of anything else.
+    ///
     /// A `var` that declares its own value defaults to that value, the way the
     /// memberwise initializer does, so a fake starts from the state the model
     /// itself describes. `accessLevel` is the level of the generated method,
@@ -119,7 +122,8 @@ enum FakeGenerator {
                 type: type.isFunction
                     ? "@escaping \(type.trimmedDescription)"
                     : type.trimmedDescription,
-                defaultValue: declaredDefault(of: binding, accessLevel: accessLevel)
+                defaultValue: variable.fakeValue?.trimmedDescription
+                    ?? declaredDefault(of: binding, accessLevel: accessLevel)
                     ?? DefaultValue.resolve(
                         for: type,
                         genericParameterNames: genericParameterNames
