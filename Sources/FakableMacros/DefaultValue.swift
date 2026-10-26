@@ -72,9 +72,10 @@ enum DefaultValue {
             if type.references(anyOf: genericParameterNames) {
                 return nil
             }
-            // For other types (structs, enums, etc.), try to use .fake()
-            // If the type doesn't have .fake(), users can provide explicit default values
-            return ".fake()"
+            // Only a type written as a name can have a `fake()` of its own. A
+            // closure, tuple, existential or metatype has no member to call,
+            // so it becomes a required parameter instead.
+            return type.isNominal ? ".fake()" : nil
         }
     }
 }
@@ -112,6 +113,37 @@ extension TypeSyntax {
     /// one.
     var isSet: Bool {
         nominalName == "Set"
+    }
+
+    /// Whether the type is written as a name, such as `Item` or
+    /// `Models.Item`, and so could declare a `fake()` of its own.
+    ///
+    /// A function type, a tuple, `any P`, `P & Q`, a metatype, and an
+    /// `InlineArray` written as `[3 of Int]` are not.
+    var isNominal: Bool {
+        self.is(IdentifierTypeSyntax.self) || self.is(MemberTypeSyntax.self)
+    }
+
+    /// Whether the type is a function type, looking through attributes such
+    /// as `@Sendable` and through parentheses.
+    ///
+    /// A parameter of function type does not escape unless it is marked
+    /// `@escaping`, and `fake()` stores every parameter it takes, so such a
+    /// parameter needs the attribute. An optional function type is already
+    /// escaping and does not count.
+    var isFunction: Bool {
+        if self.is(FunctionTypeSyntax.self) {
+            return true
+        }
+        if let attributed = self.as(AttributedTypeSyntax.self) {
+            return attributed.baseType.isFunction
+        }
+        if let tuple = self.as(TupleTypeSyntax.self), tuple.elements.count == 1,
+            let element = tuple.elements.first, element.firstName == nil
+        {
+            return element.type.isFunction
+        }
+        return false
     }
 
     /// The type's spelling with any module qualification dropped.

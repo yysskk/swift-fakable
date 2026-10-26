@@ -14,7 +14,7 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
     /// An enum has no case to return.
     case noCases
 
-    /// The case `fake()` would return carries a value the macro cannot write.
+    /// Every case carries an associated value the macro cannot write.
     case unwritableAssociatedValue
 
     /// The `condition:` argument was not written in a form the macro can read.
@@ -34,7 +34,7 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         case .unwritableAssociatedValue:
             """
             '@Fakable' cannot write a value for any case of this enum; \
-            every case carries a generic associated value
+            every case carries an associated value with no default, such as a generic or a closure
             """
         case .unreadableCondition:
             """

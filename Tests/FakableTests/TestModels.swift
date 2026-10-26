@@ -107,6 +107,31 @@ public struct TestPublicDefaults {
     public var page: Int = Self.firstPage
 }
 
+protocol TestShape {
+    var sides: Int { get }
+}
+
+struct TestSquare: TestShape {
+    var sides: Int { 4 }
+}
+
+@Fakable
+struct TestHandlers {
+    static func ignore() {}
+
+    let onTap: () -> Void
+    let onChange: @Sendable (Int) -> Void
+    var onDone: () -> Void = Self.ignore
+    var onCancel: (() -> Void)?
+}
+
+@Fakable
+struct TestStructural {
+    let pair: (Int, String)
+    let shape: any TestShape
+    let kind: TestSquare.Type
+}
+
 @Fakable
 struct TestComputed {
     let name: String

@@ -186,6 +186,30 @@ struct BasicTests {
         #expect(person1.name != person2.name)
     }
 
+    @Test("Function-typed properties are escaping parameters")
+    func testFunctionTypes() {
+        var taps = 0
+        let handlers = TestHandlers.fake(onTap: { taps += 1 }, onChange: { _ in })
+
+        handlers.onTap()
+        handlers.onDone()
+        #expect(taps == 1)
+        #expect(handlers.onCancel == nil)
+    }
+
+    @Test("Tuple, existential and metatype properties are required")
+    func testStructuralTypes() {
+        let structural = TestStructural.fake(
+            pair: (1, "a"),
+            shape: TestSquare(),
+            kind: TestSquare.self
+        )
+
+        #expect(structural.pair == (1, "a"))
+        #expect(structural.shape.sides == 4)
+        #expect(structural.kind == TestSquare.self)
+    }
+
     @Test("fake() is only available in DEBUG")
     func testDebugOnlyAvailability() {
         #if DEBUG

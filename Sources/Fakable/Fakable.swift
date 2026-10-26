@@ -34,7 +34,9 @@
 /// - `Array` (`[T]`) and `Set` (`Set<T>`): `[]`
 /// - `Dictionary` (`[K: V]`): `[:]`
 /// - `Optional`: `nil`
-/// - any other type: `.fake()`, so that type needs `@Fakable` too
+/// - a closure, tuple, `any P`, `P & Q`, or metatype: no default, so the
+///   parameter is required; a closure is marked `@escaping`
+/// - any other named type: `.fake()`, so that type needs `@Fakable` too
 ///
 /// ## Enums
 ///
