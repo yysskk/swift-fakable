@@ -2,7 +2,7 @@
 
 > A Swift macro (`@Fakable`) that generates a `fake()` factory method on structs and enums for building test fixtures. MIT licensed, supports Swift 6.0+.
 
-swift-fakable provides a single `@Fakable` macro that you attach to a struct or an enum. It generates a `static func fake(...)` wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom condition or removes the guard):
+swift-fakable provides a `@Fakable` macro that you attach to a struct or an enum. It generates a `static func fake(...)` wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom condition or removes the guard):
 
 - On a **struct**, one parameter per stored property, in declaration order, each defaulted to the value it declares or else by its type (a `public fake()` uses only a literal declared value), forwarded to the memberwise initializer. A property inside `#if` is a parameter only in the configurations that declare it; each clause gets its own `fake()`.
 - On an **enum**, a parameterless `fake()` returning the first case without associated values, or the first case with its values defaulted when every case has them.
@@ -34,6 +34,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Labeled and unlabeled enum associated values
 - Nested `@Fakable` models through the `.fake()` fallback
 - Generic structs (generic-typed properties become required parameters) and generic enums
+- Per-property defaults with `@FakeValue(value)`, ahead of a declared value and the type's default (the value needs a type of its own: `Role.member`, not `.member`)
 - Configurable compilation condition (`@Fakable(condition:)` — `.debug` default, `.custom("FAKING")` / `.custom("DEBUG || UITESTS")`, or `.always`)
 
 ## Limitations

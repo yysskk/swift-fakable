@@ -168,6 +168,16 @@ struct TestConditionalMembers {
 }
 
 @Fakable
+struct TestAccount {
+    @FakeValue("user@example.com")
+    let email: String
+    @FakeValue(TestStatus.inactive)
+    let status: TestStatus
+    @FakeValue(3)
+    var page: Int = 1
+}
+
+@Fakable
 struct TestComputed {
     let name: String
     var label: String {

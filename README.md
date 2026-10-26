@@ -183,6 +183,31 @@ let user = User.fake(address: .fake(city: "Tokyo"))
 
 The same table applies to an enum case's associated values.
 
+## Overriding a Default
+
+When a type's default is not a useful starting point, mark the property with
+`@FakeValue` and `fake()` defaults to that value instead. It works on a `let`,
+which cannot declare a value of its own:
+
+```swift
+@Fakable
+struct User {
+    @FakeValue("user@example.com")
+    let email: String
+    @FakeValue(Role.member)
+    let role: Role
+}
+
+User.fake().email               // "user@example.com"
+User.fake(email: "a@b.c").email // an explicit argument still wins
+```
+
+`@FakeValue` takes precedence over a declared value and over the type's
+default. The value is type-checked on its own, before the property's type is
+known, so it needs a type of its own: write `Role.member` rather than
+`.member`. Like any attached peer macro it applies to a declaration of one
+property, so split `let width, height: Int` to give each its own value.
+
 ## Choosing When Fixtures Are Compiled
 
 By default `fake()` is wrapped in `#if DEBUG`, so it never ships in a release
@@ -227,6 +252,7 @@ expands at compile time and cannot read a value computed at run time.
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
+- Per-property defaults with `@FakeValue`
 - Configurable compilation condition (`condition:` — `#if DEBUG` by default, a custom condition, or no guard)
 
 ## Behavioral Notes

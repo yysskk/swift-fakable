@@ -4,7 +4,7 @@ Generate `fake()` test fixtures for your structs and enums.
 
 ## Overview
 
-`Fakable` provides a single macro, ``Fakable(condition:)``, that adds a `fake()` factory
+`Fakable` provides a macro, ``Fakable(condition:)``, that adds a `fake()` factory
 method to the type it is attached to. Every parameter has a default derived from
 its type, so a test names only the values it actually cares about:
 
@@ -32,6 +32,10 @@ release build. ``FakeCompilationCondition`` selects a different guard, or none.
 - <doc:GettingStarted>
 - ``Fakable(condition:)``
 - ``FakeCompilationCondition``
+
+### Customizing defaults
+
+- ``FakeValue(_:)``
 
 ### Going further
 

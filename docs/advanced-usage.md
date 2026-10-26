@@ -267,6 +267,54 @@ Seven details are worth spelling out:
   [Generic types](#generic-types)). The check is made token by token, so a type
   named `Total` is not mistaken for a generic parameter named `T`.
 
+## Overriding a default with `@FakeValue`
+
+`@FakeValue(value)` on a stored property sets the default its `fake()`
+parameter takes. It is the only way to give a `let` a default other than its
+type's, since a `let` with a value of its own is not in the memberwise
+initializer:
+
+```swift
+@Fakable
+struct User {
+    @FakeValue("user@example.com")
+    let email: String
+    @FakeValue(Role.member)
+    let role: Role
+    @FakeValue(3)
+    var page: Int = 1
+}
+
+// Generated:
+static func fake(
+    email: String = "user@example.com",
+    role: Role = Role.member,
+    page: Int = 3
+) -> Self
+```
+
+The value is written into `fake()` exactly as given, and wins over both a
+declared value and the type's default. A few rules follow from how the
+attribute is checked:
+
+- **The value needs a type of its own.** The compiler type-checks a macro's
+  arguments before it knows which property they belong to, so an implicit
+  member such as `.member` cannot be resolved, and a bare `[]` or `nil` cannot
+  either. Name the type (`Role.member`); `[]` and `nil` are already the
+  defaults for collections and optionals.
+- **One property per declaration.** Attached peer macros apply to a single
+  variable, so the compiler rejects `@FakeValue` on `let width, height: Int`.
+  Declare the two separately.
+- **A public `fake()` inlines it.** The value becomes a default argument, so
+  on a `public` type it may reference only public declarations. Unlike a
+  declared value, the macro does not fall back here: you wrote the value for
+  `fake()`, so it is used as written.
+
+`@FakeValue` has no effect where `fake()` takes no parameter — on a `static`
+property, a computed one, a `let` that already has a value — or on a property
+of a type without `@Fakable`, and warns there. On anything other than a
+property it is an error.
+
 ## Nested models
 
 The `.fake()` fallback is what makes models compose. Any type the table does not
@@ -422,6 +470,14 @@ attribute simply had nothing to do:
 ```
 '@Fakable' generates nothing for a struct with no stored properties
 '@Fakable' generates nothing for an enum with no cases
+```
+
+`@FakeValue` warns where it has no effect and is an error on anything other
+than a property:
+
+```
+'@FakeValue' has no effect here; 'fake()' takes no parameter for this property, or its type is not '@Fakable'
+'@FakeValue' can only be applied to a stored property
 ```
 
 The `condition:` argument has two errors of its own, for a value that is not

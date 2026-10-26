@@ -5,6 +5,7 @@ import SwiftSyntaxMacros
 @main
 struct FakablePlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        FakableMacro.self
+        FakableMacro.self,
+        FakeValueMacro.self,
     ]
 }

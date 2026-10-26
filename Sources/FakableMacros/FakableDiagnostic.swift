@@ -1,6 +1,6 @@
 import SwiftDiagnostics
 
-/// The diagnostics `@Fakable` emits.
+/// The diagnostics `@Fakable` and `@FakeValue` emit.
 ///
 /// Every case carries a stable ``MessageID``, so a diagnostic can be recognised
 /// by tooling rather than only by its text.
@@ -27,6 +27,13 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
 
     /// The custom condition is not something `#if` accepts.
     case invalidCondition(String)
+
+    /// `@FakeValue` was attached to something other than a property.
+    case misplacedFakeValue
+
+    /// `@FakeValue` was attached to a property `fake()` takes no parameter
+    /// for, or to a property of a type without `@Fakable`.
+    case unusedFakeValue
 
     var message: String {
         switch self {
@@ -55,15 +62,23 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
             // Spelled as a literal, so a condition containing a newline is
             // still reported on one line.
             "\(String(reflecting: condition)) is not a compilation condition '#if' accepts"
+        case .misplacedFakeValue:
+            "'@FakeValue' can only be applied to a stored property"
+        case .unusedFakeValue:
+            """
+            '@FakeValue' has no effect here; 'fake()' takes no parameter for this \
+            property, or its type is not '@Fakable'
+            """
         }
     }
 
     var severity: DiagnosticSeverity {
         switch self {
-        case .noStoredProperties, .noCases:
+        case .noStoredProperties, .noCases, .unusedFakeValue:
             .warning
         case .unsupportedDeclaration, .memberwiseInitializerUnavailable,
-            .unwritableAssociatedValue, .unreadableCondition, .invalidCondition:
+            .unwritableAssociatedValue, .unreadableCondition, .invalidCondition,
+            .misplacedFakeValue:
             .error
         }
     }
@@ -81,6 +96,8 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         case .unwritableAssociatedValue: "unwritableAssociatedValue"
         case .unreadableCondition: "unreadableCondition"
         case .invalidCondition: "invalidCondition"
+        case .misplacedFakeValue: "misplacedFakeValue"
+        case .unusedFakeValue: "unusedFakeValue"
         }
     }
 }
