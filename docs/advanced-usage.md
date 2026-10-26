@@ -478,6 +478,30 @@ compile-time error, reported on the attribute itself:
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
 
+A class or actor can still take part in a `@Fakable` model: write its `fake()`
+by hand, and every property of that type picks it up through the `.fake()`
+fallback.
+
+```swift
+final class Session {
+    let token: String
+    init(token: String) { self.token = token }
+}
+
+#if DEBUG
+extension Session {
+    static func fake(token: String = "") -> Session {
+        Session(token: token)
+    }
+}
+#endif
+
+@Fakable
+struct Request {
+    let session: Session   // defaults to Session.fake()
+}
+```
+
 A struct whose body declares an `init` that cannot stand in for the memberwise
 initializer is an error, reported on that `init`, since `fake()` would have
 nothing to call:

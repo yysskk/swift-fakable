@@ -308,7 +308,9 @@ expands at compile time and cannot read a value computed at run time.
 ## Diagnostics and Limitations
 
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
-  actor, or protocol is a compile-time error reported on the attribute itself.
+  actor, or protocol is a compile-time error reported on the attribute itself. A
+  class or actor can still appear in a `@Fakable` model: give it a hand-written
+  `static func fake()` and its properties pick that up through `.fake()`.
 - `fake()` takes exactly the parameters the memberwise initializer takes, since
   that is what its body calls. Type-level (`static`) properties, computed
   properties, and constants that already have a value are left out for that
