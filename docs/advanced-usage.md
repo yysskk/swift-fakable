@@ -89,6 +89,37 @@ without interpolation, `true` / `false`, `nil`, or an array or dictionary
 literal of those — and uses the type's default otherwise. `package` and
 narrower levels take any value as written.
 
+### Properties inside `#if`
+
+A stored property declared inside `#if` is part of the memberwise initializer
+only in the configurations that clause selects, so `fake()` follows the same
+split. Each clause gets a `fake()` of its own, taking the properties that
+configuration declares, and a block without `#else` gains one for the
+configuration where no clause holds:
+
+```swift
+@Fakable
+struct Item {
+    let name: String
+    #if os(iOS)
+    let badge: Int
+    #endif
+}
+
+// Generated, inside the usual #if DEBUG:
+#if os(iOS)
+static func fake(name: String = "", badge: Int = 0) -> Self { ... }
+#else
+static func fake(name: String = "") -> Self { ... }
+#endif
+```
+
+Nested blocks split within their clause, and a block that declares no stored
+properties — one holding only methods, say — does not split `fake()` at all. An
+`init` in the body must stand in for the memberwise initializer of every
+configuration for `fake()` to use it. An enum's cases inside `#if` are not
+considered when choosing the case `fake()` returns.
+
 ### Parameter order and the initializer
 
 Parameters keep the declaration order of the stored properties, and the body

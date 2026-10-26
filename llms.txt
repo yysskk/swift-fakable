@@ -4,7 +4,7 @@
 
 swift-fakable provides a single `@Fakable` macro that you attach to a struct or an enum. It generates a `static func fake(...)` wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom condition or removes the guard):
 
-- On a **struct**, one parameter per stored property, in declaration order, each defaulted to the value it declares or else by its type (a `public fake()` uses only a literal declared value), forwarded to the memberwise initializer.
+- On a **struct**, one parameter per stored property, in declaration order, each defaulted to the value it declares or else by its type (a `public fake()` uses only a literal declared value), forwarded to the memberwise initializer. A property inside `#if` is a parameter only in the configurations that declare it; each clause gets its own `fake()`.
 - On an **enum**, a parameterless `fake()` returning the first case without associated values, or the first case with its values defaulted when every case has them.
 - Tests name only the values they care about: `Item.fake(itemId: "item-1", price: 500)`.
 

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Stored properties declared inside `#if` are now parameters in the
+  configurations that declare them. Each clause gets a `fake()` of its own, and
+  a block without `#else` gains one for the configuration where no clause
+  holds, matching the memberwise initializer of each. They used to be skipped,
+  so `fake()` failed with `missing argument` wherever such a property existed.
 - A struct that declares an `init` in its body, and so gets no memberwise
   initializer, is now reported on that `init` with a message that says to move
   it to an extension. It used to fail inside the generated code with an
