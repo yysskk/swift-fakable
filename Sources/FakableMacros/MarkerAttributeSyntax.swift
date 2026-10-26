@@ -31,7 +31,7 @@ extension TypeSyntax {
 extension MacroExpansionContext {
     /// Whether the innermost enclosing type is marked `@Fakable`.
     var isInsideFakableType: Bool {
-        guard let type = lexicalContext.first?.asProtocol(WithAttributesSyntax.self) else {
+        guard let type = lexicalContext.first?.asProtocol((any WithAttributesSyntax).self) else {
             return false
         }
         return type.attributes.attribute(named: "Fakable") != nil

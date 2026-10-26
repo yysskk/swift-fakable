@@ -1,6 +1,6 @@
 import SwiftDiagnostics
-import SwiftSyntax
-import SwiftSyntaxMacros
+public import SwiftSyntax
+public import SwiftSyntaxMacros
 
 /// The implementation of the `@FakeCase` macro.
 ///

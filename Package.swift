@@ -3,6 +3,13 @@
 import CompilerPluginSupport
 import PackageDescription
 
+/// Upcoming language features every target opts into, so the package is
+/// already written the way later language modes require.
+let upcomingFeatures: [SwiftSetting] = [
+    .enableUpcomingFeature("ExistentialAny"),
+    .enableUpcomingFeature("InternalImportsByDefault"),
+]
+
 let package = Package(
     name: "swift-fakable",
     platforms: [
@@ -33,16 +40,18 @@ let package = Package(
                 .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
                 .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
-            ]
+            ],
+            swiftSettings: upcomingFeatures
         ),
         .target(
             name: "Fakable",
-            dependencies: ["FakableMacros"]
+            dependencies: ["FakableMacros"],
+            swiftSettings: upcomingFeatures
         ),
         .testTarget(
             name: "FakableTests",
             dependencies: ["Fakable"],
-            swiftSettings: [
+            swiftSettings: upcomingFeatures + [
                 // Exercises @Fakable(condition: .custom(...)) end to end; the
                 // runtime tests reference a fake that only exists when this
                 // flag is defined.
@@ -54,7 +63,8 @@ let package = Package(
             dependencies: [
                 "FakableMacros",
                 .product(name: "SwiftSyntaxMacrosGenericTestSupport", package: "swift-syntax"),
-            ]
+            ],
+            swiftSettings: upcomingFeatures
         ),
     ]
 )
