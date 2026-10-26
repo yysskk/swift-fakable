@@ -47,7 +47,9 @@ only when that value is a literal and uses the type's default otherwise.
 A property inside `#if` is a parameter only where that clause holds, as it is
 for the memberwise initializer. Each clause gets a `fake()` of its own, and a
 block without `#else` gains one for the configuration where no clause holds. A
-block that declares no stored properties does not split `fake()`.
+block that declares no stored properties does not split `fake()`. Blocks in
+sequence multiply — two that declare properties give four variants — so keep
+conditional properties in as few blocks as you can.
 
 Parameters keep declaration order, and the body forwards them to the memberwise
 initializer by label. Because it calls `Self(...)`, `fake()` needs the

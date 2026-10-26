@@ -255,4 +255,70 @@ struct ConditionalMemberMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Sequential #if blocks give one fake() per combination")
+    func fakableWithSequentialConditionalBlocks() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                #if os(iOS)
+                let badge: Int
+                #endif
+                #if DEBUG
+                let note: String
+                #endif
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    #if os(iOS)
+                    let badge: Int
+                    #endif
+                    #if DEBUG
+                    let note: String
+                    #endif
+
+                    #if DEBUG
+                    #if os(iOS)
+                    #if DEBUG
+                    static func fake(
+                        badge: Int = 0,
+                        note: String = ""
+                    ) -> Self {
+                        Self(
+                            badge: badge,
+                            note: note
+                        )
+                    }
+                    #else
+                    static func fake(
+                        badge: Int = 0
+                    ) -> Self {
+                        Self(
+                            badge: badge
+                        )
+                    }
+                    #endif
+                    #else
+                    #if DEBUG
+                    static func fake(
+                        note: String = ""
+                    ) -> Self {
+                        Self(
+                            note: note
+                        )
+                    }
+                    #else
+                    static func fake() -> Self {
+                        Self()
+                    }
+                    #endif
+                    #endif
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 }

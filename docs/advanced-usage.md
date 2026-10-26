@@ -115,7 +115,11 @@ static func fake(name: String = "") -> Self { ... }
 ```
 
 Nested blocks split within their clause, and a block that declares no stored
-properties — one holding only methods, say — does not split `fake()` at all. An
+properties — one holding only methods, say — does not split `fake()` at all. Blocks
+in sequence multiply, because each configuration of one combines with each of
+the next: two blocks that declare properties give four `fake()` variants, and
+three give eight. Keep conditional properties in as few blocks as the model
+allows. An
 `init` in the body must stand in for the memberwise initializer of every
 configuration for `fake()` to use it. An enum's cases inside `#if` are not
 considered when choosing the case `fake()` returns.
