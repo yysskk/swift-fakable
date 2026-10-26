@@ -22,8 +22,13 @@ public struct FakableMacro: MemberMacro {
             return []
         }
 
+        let accessLevel = AccessLevel(of: declaration).memberLevel
+
         if let structDecl = declaration.as(StructDeclSyntax.self) {
-            let storedProperties = FakeGenerator.storedProperties(of: structDecl)
+            let storedProperties = FakeGenerator.storedProperties(
+                of: structDecl,
+                accessLevel: accessLevel
+            )
 
             guard !storedProperties.isEmpty else {
                 context.diagnose(node, .noStoredProperties)
@@ -32,7 +37,7 @@ public struct FakableMacro: MemberMacro {
 
             let fakeMethod = FakeGenerator.fakeMethod(
                 for: storedProperties,
-                accessLevel: AccessLevel(of: declaration).memberLevel,
+                accessLevel: accessLevel,
                 condition: condition
             )
             return [DeclSyntax(stringLiteral: fakeMethod)]
@@ -47,7 +52,7 @@ public struct FakableMacro: MemberMacro {
             guard
                 let fakeMethod = FakeGenerator.enumFakeMethod(
                     firstCase: firstCase,
-                    accessLevel: AccessLevel(of: declaration).memberLevel,
+                    accessLevel: accessLevel,
                     condition: condition
                 )
             else {

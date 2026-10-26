@@ -19,7 +19,10 @@
 /// ```
 ///
 /// The generated `fake(...)` takes one parameter per stored property, in
-/// declaration order, defaulted as follows:
+/// declaration order. A `var` that declares its own value defaults to that
+/// value; a `public` `fake()` uses it only when it is a literal, since its
+/// default arguments may reference only public declarations. Every other
+/// parameter is defaulted by its type:
 ///
 /// - `String`: `""`
 /// - `Int`, `UInt`, and the sized integer types: `0`

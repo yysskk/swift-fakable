@@ -236,7 +236,8 @@ expands at compile time and cannot read a value computed at run time.
   body forwards them to the memberwise initializer by label. One declaration can
   introduce several of them: `let x, y: Int` yields a parameter each.
 - A stored property that declares its own value (`var page: Int = 1`) still gets
-  a parameter, defaulted from its type rather than from the declared value.
+  a parameter, defaulted to that value. A `public fake()` uses the value only
+  when it is a literal, and the type's default otherwise.
 - For enums, a case **without** associated values is preferred no matter where it
   appears in the declaration, because it needs no values invented for it:
 

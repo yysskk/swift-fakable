@@ -62,6 +62,26 @@ struct StoredPropertyTests {
         #expect(versioned.revision == 9)
     }
 
+    @Test("Variable with a value defaults to that value")
+    func testInitializedVariable() {
+        #expect(TestVersioned.fake(name: "a").revision == 7)
+
+        let paged = TestPaged.fake()
+        #expect(paged.page == 1)
+        #expect(paged.note == "draft")
+        #expect(TestPaged.fake(note: nil).note == nil)
+    }
+
+    @Test("Public fake() uses literal values and type defaults otherwise")
+    func testPublicInitializedVariable() {
+        let defaults = TestPublicDefaults.fake()
+
+        #expect(defaults.limit == 20)
+        #expect(defaults.tags == ["a"])
+        #expect(defaults.page == 0)
+        #expect(TestPublicDefaults.fake(page: 3).page == 3)
+    }
+
     @Test("Computed property is not a fake() parameter")
     func testComputedProperty() {
         #expect(TestComputed.fake(name: "a").label == "a")

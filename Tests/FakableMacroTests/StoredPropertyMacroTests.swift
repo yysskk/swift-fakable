@@ -165,7 +165,7 @@ struct StoredPropertyMacroTests {
         )
     }
 
-    @Test("Variable with a value stays a parameter")
+    @Test("Variable with a value stays a parameter, defaulted to that value")
     func fakableWithInitializedVariable() {
         assertMacroExpansionForTesting(
             """
@@ -183,7 +183,7 @@ struct StoredPropertyMacroTests {
                     #if DEBUG
                     static func fake(
                         name: String = "",
-                        version: Int = 0
+                        version: Int = 5
                     ) -> Self {
                         Self(
                             name: name,
@@ -222,6 +222,196 @@ struct StoredPropertyMacroTests {
                     ) -> Self {
                         Self(
                             name: name
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Declared value that references a declaration is used as written")
+    func fakableWithInitializerReferencingDeclaration() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Page {
+                static let first = 1
+                var number: Int = Self.first
+                var label: String = "page \\(Self.first)"
+            }
+            """,
+            expandedSource: """
+                struct Page {
+                    static let first = 1
+                    var number: Int = Self.first
+                    var label: String = "page \\(Self.first)"
+
+                    #if DEBUG
+                    static func fake(
+                        number: Int = Self.first,
+                        label: String = "page \\(Self.first)"
+                    ) -> Self {
+                        Self(
+                            number: number,
+                            label: label
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Declared value overrides the optional default")
+    func fakableWithInitializedOptional() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                var note: String? = "draft"
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    var note: String? = "draft"
+
+                    #if DEBUG
+                    static func fake(
+                        note: String? = "draft"
+                    ) -> Self {
+                        Self(
+                            note: note
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Public fake() uses a declared literal")
+    func fakableWithPublicLiteralInitializers() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            public struct Settings {
+                var count: Int = 5
+                var offset: Int = -1
+                var ratio: Double = -0.5
+                var title: String = "untitled"
+                var isOn: Bool = true
+                var tags: [String] = ["a", "b"]
+                var limits: [String: Int] = ["a": 1]
+                var empty: [String: Int] = [:]
+                var note: String? = nil
+            }
+            """,
+            expandedSource: """
+                public struct Settings {
+                    var count: Int = 5
+                    var offset: Int = -1
+                    var ratio: Double = -0.5
+                    var title: String = "untitled"
+                    var isOn: Bool = true
+                    var tags: [String] = ["a", "b"]
+                    var limits: [String: Int] = ["a": 1]
+                    var empty: [String: Int] = [:]
+                    var note: String? = nil
+
+                    #if DEBUG
+                    public static func fake(
+                        count: Int = 5,
+                        offset: Int = -1,
+                        ratio: Double = -0.5,
+                        title: String = "untitled",
+                        isOn: Bool = true,
+                        tags: [String] = ["a", "b"],
+                        limits: [String: Int] = ["a": 1],
+                        empty: [String: Int] = [:],
+                        note: String? = nil
+                    ) -> Self {
+                        Self(
+                            count: count,
+                            offset: offset,
+                            ratio: ratio,
+                            title: title,
+                            isOn: isOn,
+                            tags: tags,
+                            limits: limits,
+                            empty: empty,
+                            note: note
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Public fake() falls back to the type default for a non-literal value")
+    func fakableWithPublicNonLiteralInitializers() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            public struct Settings {
+                static let first = 1
+                var number: Int = Self.first
+                var label: String = "page \\(1)"
+                var pages: [Int] = [Self.first]
+            }
+            """,
+            expandedSource: """
+                public struct Settings {
+                    static let first = 1
+                    var number: Int = Self.first
+                    var label: String = "page \\(1)"
+                    var pages: [Int] = [Self.first]
+
+                    #if DEBUG
+                    public static func fake(
+                        number: Int = 0,
+                        label: String = "",
+                        pages: [Int] = []
+                    ) -> Self {
+                        Self(
+                            number: number,
+                            label: label,
+                            pages: pages
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Package fake() uses a non-literal value as written")
+    func fakableWithPackageNonLiteralInitializer() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            package struct Settings {
+                static let first = 1
+                var number: Int = Self.first
+            }
+            """,
+            expandedSource: """
+                package struct Settings {
+                    static let first = 1
+                    var number: Int = Self.first
+
+                    #if DEBUG
+                    package static func fake(
+                        number: Int = Self.first
+                    ) -> Self {
+                        Self(
+                            number: number
                         )
                     }
                     #endif

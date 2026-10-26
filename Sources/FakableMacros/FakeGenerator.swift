@@ -14,7 +14,16 @@ enum FakeGenerator {
     ///
     /// A property whose type is inferred is also left out: the macro reads
     /// syntax, not types, so there is nothing to write a parameter type from.
-    static func storedProperties(of structDecl: StructDeclSyntax) -> [StoredProperty] {
+    ///
+    /// A `var` that declares its own value defaults to that value, the way the
+    /// memberwise initializer does, so a fake starts from the state the model
+    /// itself describes. `accessLevel` is the level of the generated method,
+    /// which decides whether the value can be used (see
+    /// ``declaredDefault(of:accessLevel:)``).
+    static func storedProperties(
+        of structDecl: StructDeclSyntax,
+        accessLevel: AccessLevel
+    ) -> [StoredProperty] {
         let genericParameterNames = structDecl.genericParameterClause.parameterNames
 
         return structDecl.memberBlock.members.flatMap { member -> [StoredProperty] in
@@ -34,13 +43,34 @@ enum FakeGenerator {
                 return StoredProperty(
                     name: identifier.identifier.text,
                     type: type.trimmedDescription,
-                    defaultValue: DefaultValue.resolve(
-                        for: type,
-                        genericParameterNames: genericParameterNames
-                    )
+                    defaultValue: declaredDefault(of: binding, accessLevel: accessLevel)
+                        ?? DefaultValue.resolve(
+                            for: type,
+                            genericParameterNames: genericParameterNames
+                        )
                 )
             }
         }
+    }
+
+    /// The value the property declares for itself, when `fake()` can use it as
+    /// a default argument.
+    ///
+    /// A `public` method's default arguments are emitted into its callers, so
+    /// they may reference only public declarations. The macro cannot tell
+    /// whether `var page: Int = firstPage` names one, so a `public fake()` uses
+    /// a declared value only when it is a literal, and falls back to the type's
+    /// default otherwise. Every other access level takes the value as written.
+    private static func declaredDefault(
+        of binding: PatternBindingSyntax,
+        accessLevel: AccessLevel
+    ) -> String? {
+        guard let value = binding.initializer?.value,
+            accessLevel != .public || value.isLiteral
+        else {
+            return nil
+        }
+        return value.trimmedDescription
     }
 
     /// The case `fake()` returns.
