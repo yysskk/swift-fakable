@@ -1,6 +1,6 @@
 import SwiftDiagnostics
 
-/// The diagnostics `@Fakable` and `@FakeValue` emit.
+/// The diagnostics `@Fakable`, `@FakeValue`, and `@FakeCase` emit.
 ///
 /// Every case carries a stable ``MessageID``, so a diagnostic can be recognised
 /// by tooling rather than only by its text.
@@ -27,6 +27,21 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
 
     /// The custom condition is not something `#if` accepts.
     case invalidCondition(String)
+
+    /// The case marked `@FakeCase` carries a value the macro cannot write.
+    case unwritableFakeCase
+
+    /// More than one case is marked `@FakeCase`.
+    case duplicateFakeCase
+
+    /// `@FakeCase` was attached to something other than an enum case.
+    case misplacedFakeCase
+
+    /// `@FakeCase` was attached to a declaration of several cases.
+    case ambiguousFakeCase
+
+    /// `@FakeCase` was attached to a case of an enum without `@Fakable`.
+    case unusedFakeCase
 
     /// `@FakeValue` was attached to something other than a property.
     case misplacedFakeValue
@@ -62,6 +77,19 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
             // Spelled as a literal, so a condition containing a newline is
             // still reported on one line.
             "\(String(reflecting: condition)) is not a compilation condition '#if' accepts"
+        case .unwritableFakeCase:
+            """
+            '@FakeCase' marks a case with an associated value that has no default, \
+            such as a generic or a closure
+            """
+        case .duplicateFakeCase:
+            "'@FakeCase' can mark only one case of an enum"
+        case .misplacedFakeCase:
+            "'@FakeCase' can only be applied to an enum case"
+        case .ambiguousFakeCase:
+            "'@FakeCase' marks a single case; declare this case on its own"
+        case .unusedFakeCase:
+            "'@FakeCase' has no effect in an enum that is not '@Fakable'"
         case .misplacedFakeValue:
             "'@FakeValue' can only be applied to a stored property"
         case .unusedFakeValue:
@@ -74,10 +102,11 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
 
     var severity: DiagnosticSeverity {
         switch self {
-        case .noStoredProperties, .noCases, .unusedFakeValue:
+        case .noStoredProperties, .noCases, .unusedFakeValue, .unusedFakeCase:
             .warning
         case .unsupportedDeclaration, .memberwiseInitializerUnavailable,
             .unwritableAssociatedValue, .unreadableCondition, .invalidCondition,
+            .unwritableFakeCase, .duplicateFakeCase, .misplacedFakeCase, .ambiguousFakeCase,
             .misplacedFakeValue:
             .error
         }
@@ -96,6 +125,11 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         case .unwritableAssociatedValue: "unwritableAssociatedValue"
         case .unreadableCondition: "unreadableCondition"
         case .invalidCondition: "invalidCondition"
+        case .unwritableFakeCase: "unwritableFakeCase"
+        case .duplicateFakeCase: "duplicateFakeCase"
+        case .misplacedFakeCase: "misplacedFakeCase"
+        case .ambiguousFakeCase: "ambiguousFakeCase"
+        case .unusedFakeCase: "unusedFakeCase"
         case .misplacedFakeValue: "misplacedFakeValue"
         case .unusedFakeValue: "unusedFakeValue"
         }

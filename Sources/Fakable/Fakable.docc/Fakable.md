@@ -36,6 +36,7 @@ release build. ``FakeCompilationCondition`` selects a different guard, or none.
 ### Customizing defaults
 
 - ``FakeValue(_:)``
+- ``FakeCase()``
 
 ### Going further
 

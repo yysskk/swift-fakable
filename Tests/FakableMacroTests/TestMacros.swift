@@ -5,4 +5,5 @@ import SwiftSyntaxMacros
 let testMacros: [String: Macro.Type] = [
     "Fakable": FakableMacro.self,
     "FakeValue": FakeValueMacro.self,
+    "FakeCase": FakeCaseMacro.self,
 ]

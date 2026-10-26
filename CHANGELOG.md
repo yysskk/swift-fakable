@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `@FakeCase` marks the case an enum's `fake()` returns, in place of the first
+  case without associated values. Its associated values are filled in as
+  usual, and one the macro cannot write is an error on the marker.
 - `@FakeValue(value)` sets the default a stored property's `fake()` parameter
   takes, ahead of a declared value and of the type's default. It is the only
   way to give a `let` a default of your own. It warns where it has no effect

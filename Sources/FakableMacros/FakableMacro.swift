@@ -54,14 +54,43 @@ public struct FakableMacro: MemberMacro {
         }
 
         if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-            guard let firstCase = FakeGenerator.firstCase(of: enumDecl) else {
+            let markedCases = FakeGenerator.markedCases(of: enumDecl)
+
+            for marked in markedCases.dropFirst() {
+                context.diagnose(
+                    Diagnostic(node: marked.attribute, message: FakableDiagnostic.duplicateFakeCase)
+                )
+            }
+
+            // A marked case is used whatever it carries, so a value it cannot
+            // write is reported on the marker rather than worked around.
+            if let marked = markedCases.first {
+                guard markedCases.count == 1 else {
+                    return []
+                }
+                guard
+                    let fakeMethod = FakeGenerator.enumFakeMethod(
+                        for: marked.fakeCase,
+                        accessLevel: accessLevel,
+                        condition: condition
+                    )
+                else {
+                    context.diagnose(
+                        Diagnostic(node: marked.attribute, message: FakableDiagnostic.unwritableFakeCase)
+                    )
+                    return []
+                }
+                return [DeclSyntax(stringLiteral: fakeMethod)]
+            }
+
+            guard let fakeCase = FakeGenerator.fakeCase(of: enumDecl) else {
                 context.diagnose(node, .noCases)
                 return []
             }
 
             guard
                 let fakeMethod = FakeGenerator.enumFakeMethod(
-                    firstCase: firstCase,
+                    for: fakeCase,
                     accessLevel: accessLevel,
                     condition: condition
                 )
