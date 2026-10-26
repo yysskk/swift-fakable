@@ -9,13 +9,13 @@
 /// ```swift
 /// @Fakable
 /// struct Item {
-///     let itemId: String
+///     let itemID: String
 ///     let name: String?
 ///     let price: Int
 /// }
 ///
-/// let item = Item.fake(itemId: "test-id")
-/// let another = Item.fake(itemId: "id", price: 500)
+/// let item = Item.fake(itemID: "test-id")
+/// let another = Item.fake(itemID: "id", price: 500)
 /// ```
 ///
 /// The generated `fake(...)` takes one parameter per stored property, in
@@ -43,12 +43,12 @@
 ///
 /// ```swift
 /// @Fakable
-/// enum Sex {
-///     case man
-///     case woman
+/// enum Status {
+///     case active
+///     case inactive
 /// }
 ///
-/// let sex = Sex.fake() // .man
+/// let status = Status.fake() // .active
 /// ```
 ///
 /// `fake()` returns the case marked ``FakeCase()``, or else the first case that

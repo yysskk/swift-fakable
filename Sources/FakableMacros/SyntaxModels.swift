@@ -44,13 +44,13 @@ indirect enum StoredPropertyLayout: Equatable {
 }
 
 /// The enum case that `fake()` returns, and the associated values it needs.
-struct EnumCaseInfo {
+struct EnumCase {
     let name: String
-    let parameters: [EnumCaseParameter]
+    let associatedValues: [AssociatedValue]
 }
 
 /// A single associated value of an enum case.
-struct EnumCaseParameter {
+struct AssociatedValue {
     let label: String?
 
     /// The value `fake()` passes, or `nil` when none can be written for its type.

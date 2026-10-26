@@ -43,28 +43,28 @@ import Fakable
 
 @Fakable
 struct Item {
-    let itemId: String
+    let itemID: String
     let name: String?
     let price: Int
 }
 
 @Fakable
-enum Sex {
-    case man
-    case woman
+enum Status {
+    case active
+    case inactive
 }
 
 let item = Item.fake()
-#expect(item.itemId == "")
+#expect(item.itemID == "")
 #expect(item.name == nil)
 #expect(item.price == 0)
 
 // Override only what the test is about.
-let sale = Item.fake(itemId: "item-1", price: 500)
-#expect(sale.itemId == "item-1")
+let sale = Item.fake(itemID: "item-1", price: 500)
+#expect(sale.itemID == "item-1")
 #expect(sale.price == 500)
 
-#expect(Sex.fake() == .man)
+#expect(Status.fake() == .active)
 ```
 
 ## What Gets Generated

@@ -43,22 +43,22 @@ struct BasicMacroTests {
             """
             @Fakable
             struct Item {
-                let itemId: String
+                let itemID: String
                 let name: String?
             }
             """,
             expandedSource: """
                 struct Item {
-                    let itemId: String
+                    let itemID: String
                     let name: String?
 
                     #if DEBUG
                     static func fake(
-                        itemId: String = "",
+                        itemID: String = "",
                         name: String? = nil
                     ) -> Self {
                         Self(
-                            itemId: itemId,
+                            itemID: itemID,
                             name: name
                         )
                     }
@@ -367,22 +367,22 @@ struct BasicMacroTests {
             @Fakable
             struct Person {
                 let name: String
-                let sex: Sex
+                let direction: Direction
             }
             """,
             expandedSource: """
                 struct Person {
                     let name: String
-                    let sex: Sex
+                    let direction: Direction
 
                     #if DEBUG
                     static func fake(
                         name: String = "",
-                        sex: Sex = .fake()
+                        direction: Direction = .fake()
                     ) -> Self {
                         Self(
                             name: name,
-                            sex: sex
+                            direction: direction
                         )
                     }
                     #endif
