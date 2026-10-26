@@ -10,19 +10,19 @@ struct EnumMacroTests {
         assertMacroExpansionForTesting(
             """
             @Fakable
-            enum Sex {
-                case man
-                case woman
+            enum Status {
+                case active
+                case inactive
             }
             """,
             expandedSource: """
-                enum Sex {
-                    case man
-                    case woman
+                enum Status {
+                    case active
+                    case inactive
 
                     #if DEBUG
                     static func fake() -> Self {
-                        .man
+                        .active
                     }
                     #endif
                 }

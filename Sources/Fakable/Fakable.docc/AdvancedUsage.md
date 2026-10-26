@@ -237,6 +237,10 @@ compile-time error, reported on the attribute itself:
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
 
+A class or actor can still appear in a `@Fakable` model: write its `fake()` by
+hand, in an extension under `#if DEBUG`, and properties of that type pick it up
+through the `.fake()` fallback.
+
 A struct whose body declares an `init` that cannot stand in for the memberwise
 initializer is an error too, reported on that `init`.
 

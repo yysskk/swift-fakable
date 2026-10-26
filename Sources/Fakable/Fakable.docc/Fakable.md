@@ -13,12 +13,12 @@ import Fakable
 
 @Fakable
 struct Item {
-    let itemId: String
+    let itemID: String
     let name: String?
     let price: Int
 }
 
-let item = Item.fake(itemId: "item-1", price: 500)
+let item = Item.fake(itemID: "item-1", price: 500)
 // name defaults to nil, and the other values to "" and 0
 ```
 

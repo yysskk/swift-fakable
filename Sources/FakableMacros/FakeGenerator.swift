@@ -185,7 +185,7 @@ enum FakeGenerator {
     /// in declaration order.
     static func markedCases(
         of enumDecl: EnumDeclSyntax
-    ) -> [(fakeCase: EnumCaseInfo, attribute: AttributeSyntax)] {
+    ) -> [(fakeCase: EnumCase, attribute: AttributeSyntax)] {
         let genericParameterNames = enumDecl.genericParameterClause.parameterNames
 
         return enumDecl.memberBlock.members.compactMap { member in
@@ -196,10 +196,10 @@ enum FakeGenerator {
                 return nil
             }
 
-            let fakeCase = EnumCaseInfo(
+            let fakeCase = EnumCase(
                 name: element.name.text,
-                parameters: element.parameterClause.map {
-                    enumCaseParameters(of: $0, genericParameterNames: genericParameterNames)
+                associatedValues: element.parameterClause.map {
+                    associatedValues(of: $0, genericParameterNames: genericParameterNames)
                 } ?? []
             )
             return (fakeCase: fakeCase, attribute: attribute)
@@ -239,15 +239,13 @@ enum FakeGenerator {
     /// it needs no values invented for it. Only when every case carries
     /// associated values does the first case whose values can all be written
     /// win, with values filled in.
-    static func fakeCase(of enumDecl: EnumDeclSyntax) -> EnumCaseInfo? {
+    static func fakeCase(of enumDecl: EnumDeclSyntax) -> EnumCase? {
         let members = enumDecl.memberBlock.members
 
-        // First, try to find a case without associated values
         for member in members {
             if let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) {
-                // Check if the case has no associated values
                 for element in caseDecl.elements where element.parameterClause == nil {
-                    return EnumCaseInfo(name: element.name.text, parameters: [])
+                    return EnumCase(name: element.name.text, associatedValues: [])
                 }
             }
         }
@@ -256,7 +254,7 @@ enum FakeGenerator {
         // none can be, hand back the first candidate anyway so the caller has
         // something to report the failure against.
         let genericParameterNames = enumDecl.genericParameterClause.parameterNames
-        var firstCandidate: EnumCaseInfo?
+        var firstCandidate: EnumCase?
 
         for member in members {
             guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self) else {
@@ -268,15 +266,15 @@ enum FakeGenerator {
                     continue
                 }
 
-                let candidate = EnumCaseInfo(
+                let candidate = EnumCase(
                     name: element.name.text,
-                    parameters: enumCaseParameters(
+                    associatedValues: associatedValues(
                         of: parameterClause,
                         genericParameterNames: genericParameterNames
                     )
                 )
 
-                if candidate.parameters.allSatisfy({ $0.value != nil }) {
+                if candidate.associatedValues.allSatisfy({ $0.value != nil }) {
                     return candidate
                 }
 
@@ -284,16 +282,16 @@ enum FakeGenerator {
             }
         }
 
-        // Empty enum
+        // `nil` only when the enum has no cases at all.
         return firstCandidate
     }
 
-    private static func enumCaseParameters(
+    private static func associatedValues(
         of parameterClause: EnumCaseParameterClauseSyntax,
         genericParameterNames: Set<String>
-    ) -> [EnumCaseParameter] {
+    ) -> [AssociatedValue] {
         parameterClause.parameters.map { parameter in
-            EnumCaseParameter(
+            AssociatedValue(
                 label: parameter.firstName?.text,
                 value: DefaultValue.resolve(
                     for: parameter.type,
@@ -373,12 +371,11 @@ enum FakeGenerator {
     /// The enum `fake()` source, or `nil` when no value can be written for one
     /// of the case's associated values.
     static func enumFakeMethod(
-        for fakeCase: EnumCaseInfo,
+        for fakeCase: EnumCase,
         accessLevel: AccessLevel,
         condition: CompilationCondition
     ) -> String? {
-        if fakeCase.parameters.isEmpty {
-            // Case without associated values
+        if fakeCase.associatedValues.isEmpty {
             return condition.guarding(
                 """
                 \(accessLevel.modifier)static func fake() -> Self {
@@ -388,13 +385,13 @@ enum FakeGenerator {
             )
         }
 
-        // Case with associated values - fill each one in from its type
+        // Fill each associated value in from its type.
         var renderedValues: [String] = []
-        for parameter in fakeCase.parameters {
-            guard let value = parameter.value else {
+        for associatedValue in fakeCase.associatedValues {
+            guard let value = associatedValue.value else {
                 return nil
             }
-            renderedValues.append(parameter.label.map { "\($0): \(value)" } ?? value)
+            renderedValues.append(associatedValue.label.map { "\($0): \(value)" } ?? value)
         }
 
         return condition.guarding(

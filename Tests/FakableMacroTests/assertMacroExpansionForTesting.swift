@@ -8,7 +8,7 @@ func assertMacroExpansionForTesting(
     _ originalSource: String,
     expandedSource: String,
     diagnostics: [DiagnosticSpec] = [],
-    macros: [String: Macro.Type],
+    macros: [String: any Macro.Type],
     conformsTo conformances: [TypeSyntax] = [],
     testModuleName: String = "TestModule",
     testFileName: String = "test.swift",

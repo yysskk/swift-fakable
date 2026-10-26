@@ -44,28 +44,28 @@ import Fakable
 
 @Fakable
 struct Item {
-    let itemId: String
+    let itemID: String
     let name: String?
     let price: Int
 }
 
 @Fakable
-enum Sex {
-    case man
-    case woman
+enum Status {
+    case active
+    case inactive
 }
 
 let item = Item.fake()
-#expect(item.itemId == "")
+#expect(item.itemID == "")
 #expect(item.name == nil)
 #expect(item.price == 0)
 
 // Override only what the test is about.
-let sale = Item.fake(itemId: "item-1", price: 500)
-#expect(sale.itemId == "item-1")
+let sale = Item.fake(itemID: "item-1", price: 500)
+#expect(sale.itemID == "item-1")
 #expect(sale.price == 500)
 
-#expect(Sex.fake() == .man)
+#expect(Status.fake() == .active)
 ```
 
 ## What Gets Generated
@@ -308,7 +308,9 @@ expands at compile time and cannot read a value computed at run time.
 ## Diagnostics and Limitations
 
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
-  actor, or protocol is a compile-time error reported on the attribute itself.
+  actor, or protocol is a compile-time error reported on the attribute itself. A
+  class or actor can still appear in a `@Fakable` model: give it a hand-written
+  `static func fake()` and its properties pick that up through `.fake()`.
 - `fake()` takes exactly the parameters the memberwise initializer takes, since
   that is what its body calls. Type-level (`static`) properties, computed
   properties, and constants that already have a value are left out for that
