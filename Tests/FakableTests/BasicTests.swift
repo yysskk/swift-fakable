@@ -210,6 +210,23 @@ struct BasicTests {
         #expect(structural.kind == TestSquare.self)
     }
 
+    @available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+    @Test("128-bit integers default to zero")
+    func testWideIntegers() {
+        let wide = TestWideIntegers.fake()
+
+        #expect(wide.signed == 0)
+        #expect(wide.unsigned == 0)
+        #expect(TestWideIntegers.fake(signed: -1).signed == -1)
+    }
+
+    @Test("Noncopyable struct gets a fake()")
+    func testNoncopyable() {
+        let token = TestToken.fake(value: "a")
+
+        #expect(token.value == "a")
+    }
+
     @Test("fake() is only available in DEBUG")
     func testDebugOnlyAvailability() {
         #if DEBUG

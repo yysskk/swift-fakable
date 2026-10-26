@@ -37,10 +37,10 @@ enum DefaultValue {
         switch type.unqualifiedSpelling {
         case "String":
             return "\"\""
-        case "Int", "Int8", "Int16", "Int32", "Int64",
-            "UInt", "UInt8", "UInt16", "UInt32", "UInt64":
+        case "Int", "Int8", "Int16", "Int32", "Int64", "Int128",
+            "UInt", "UInt8", "UInt16", "UInt32", "UInt64", "UInt128":
             return "0"
-        case "Double", "Float", "CGFloat", "TimeInterval":
+        case "Double", "Float", "Float16", "CGFloat", "TimeInterval":
             return "0.0"
         case "Bool":
             return "false"

@@ -97,9 +97,9 @@ Labels on associated values are preserved when present and omitted when not:
 | Type as written | Default |
 | --- | --- |
 | `String` | `""` |
-| `Int`, `Int8`, `Int16`, `Int32`, `Int64` | `0` |
-| `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64` | `0` |
-| `Double`, `Float`, `CGFloat`, `TimeInterval` | `0.0` |
+| `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128` | `0` |
+| `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` | `0` |
+| `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` | `0.0` |
 | `Bool` | `false` |
 | `Decimal` | `0` |
 | `Date` | `Date(timeIntervalSince1970: 0)` |

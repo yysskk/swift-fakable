@@ -505,4 +505,96 @@ struct BasicMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Every numeric type defaults to zero")
+    func fakableWithNumericTypes() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Numbers {
+                let vInt: Int
+                let vInt8: Int8
+                let vInt16: Int16
+                let vInt32: Int32
+                let vInt64: Int64
+                let vInt128: Int128
+                let vUInt: UInt
+                let vUInt8: UInt8
+                let vUInt16: UInt16
+                let vUInt32: UInt32
+                let vUInt64: UInt64
+                let vUInt128: UInt128
+                let vDouble: Double
+                let vFloat: Float
+                let vFloat16: Float16
+                let vCGFloat: CGFloat
+                let vTimeInterval: TimeInterval
+            }
+            """,
+            expandedSource: """
+                struct Numbers {
+                    let vInt: Int
+                    let vInt8: Int8
+                    let vInt16: Int16
+                    let vInt32: Int32
+                    let vInt64: Int64
+                    let vInt128: Int128
+                    let vUInt: UInt
+                    let vUInt8: UInt8
+                    let vUInt16: UInt16
+                    let vUInt32: UInt32
+                    let vUInt64: UInt64
+                    let vUInt128: UInt128
+                    let vDouble: Double
+                    let vFloat: Float
+                    let vFloat16: Float16
+                    let vCGFloat: CGFloat
+                    let vTimeInterval: TimeInterval
+
+                    #if DEBUG
+                    static func fake(
+                        vInt: Int = 0,
+                        vInt8: Int8 = 0,
+                        vInt16: Int16 = 0,
+                        vInt32: Int32 = 0,
+                        vInt64: Int64 = 0,
+                        vInt128: Int128 = 0,
+                        vUInt: UInt = 0,
+                        vUInt8: UInt8 = 0,
+                        vUInt16: UInt16 = 0,
+                        vUInt32: UInt32 = 0,
+                        vUInt64: UInt64 = 0,
+                        vUInt128: UInt128 = 0,
+                        vDouble: Double = 0.0,
+                        vFloat: Float = 0.0,
+                        vFloat16: Float16 = 0.0,
+                        vCGFloat: CGFloat = 0.0,
+                        vTimeInterval: TimeInterval = 0.0
+                    ) -> Self {
+                        Self(
+                            vInt: vInt,
+                            vInt8: vInt8,
+                            vInt16: vInt16,
+                            vInt32: vInt32,
+                            vInt64: vInt64,
+                            vInt128: vInt128,
+                            vUInt: vUInt,
+                            vUInt8: vUInt8,
+                            vUInt16: vUInt16,
+                            vUInt32: vUInt32,
+                            vUInt64: vUInt64,
+                            vUInt128: vUInt128,
+                            vDouble: vDouble,
+                            vFloat: vFloat,
+                            vFloat16: vFloat16,
+                            vCGFloat: vCGFloat,
+                            vTimeInterval: vTimeInterval
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 }

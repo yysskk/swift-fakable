@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Int128` and `UInt128` default to `0`, and `Float16` to `0.0`. They used to
+  fall through to `.fake()` and fail to compile.
 - `@FakeCase` marks the case an enum's `fake()` returns, in place of the first
   case without associated values. Its associated values are filled in as
   usual, and one the macro cannot write is an error on the marker.
