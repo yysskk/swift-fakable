@@ -54,6 +54,12 @@ public struct FakableMacro: MemberMacro {
         }
 
         if let enumDecl = declaration.as(EnumDeclSyntax.self) {
+            for attribute in FakeGenerator.conditionalFakeCaseAttributes(of: enumDecl) {
+                context.diagnose(
+                    Diagnostic(node: attribute, message: FakableDiagnostic.conditionalFakeCase)
+                )
+            }
+
             let markedCases = FakeGenerator.markedCases(of: enumDecl)
 
             for marked in markedCases.dropFirst() {

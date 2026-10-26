@@ -596,7 +596,8 @@ A marked case's associated values are filled in the same way, and a value the
 macro cannot write — a generic parameter, a closure — is an error on the marker
 rather than a reason to pick another case. Mark at most one case, on a
 declaration of its own: `@FakeCase case a, b` would not say which is meant, and
-both mistakes are errors. `@FakeCase` in an enum without `@Fakable` warns.
+both mistakes are errors. `@FakeCase` in an enum without `@Fakable` warns, and
+so does one on a case inside `#if`, since those cases are not considered.
 
 ### Labeled and unlabeled associated values
 
@@ -881,7 +882,7 @@ than a property:
 
 `@FakeCase` is an error on a case with a value the macro cannot write, on a
 second marked case, on a declaration of several cases, and on anything other
-than a case; it warns in an enum without `@Fakable`:
+than a case; it warns in an enum without `@Fakable` and on a case inside `#if`:
 
 ```
 '@FakeCase' marks a case with an associated value that has no default, such as a generic or a closure
@@ -889,6 +890,7 @@ than a case; it warns in an enum without `@Fakable`:
 '@FakeCase' marks a single case; declare this case on its own
 '@FakeCase' can only be applied to an enum case
 '@FakeCase' has no effect in an enum that is not '@Fakable'
+'@FakeCase' has no effect on a case declared inside '#if'
 ```
 
 The `condition:` argument has two errors of its own, for a value that is not

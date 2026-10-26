@@ -248,7 +248,8 @@ the type is not `@Fakable`, and is an error on anything other than a property.
 
 ``FakeCase()`` is an error on a case with a value the macro cannot write, on a
 second marked case, on a declaration of several cases, and on anything other
-than a case, and it warns in an enum without `@Fakable`.
+than a case, and it warns in an enum without `@Fakable` and on a case inside
+`#if`.
 
 The `condition:` argument has two errors of its own, for a value that is not
 written literally and for a condition `#if` would reject.

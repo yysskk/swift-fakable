@@ -206,6 +206,33 @@ enum FakeGenerator {
         }
     }
 
+    /// The `@FakeCase` attributes on cases declared inside `#if`, at any depth.
+    ///
+    /// Cases inside `#if` are not considered when choosing what `fake()`
+    /// returns, so a marker there would otherwise be ignored without a word.
+    static func conditionalFakeCaseAttributes(of enumDecl: EnumDeclSyntax) -> [AttributeSyntax] {
+        func attributes(in members: MemberBlockItemListSyntax, isConditional: Bool) -> [AttributeSyntax] {
+            members.flatMap { member -> [AttributeSyntax] in
+                if let ifConfig = member.decl.as(IfConfigDeclSyntax.self) {
+                    return ifConfig.clauses.flatMap { clause -> [AttributeSyntax] in
+                        guard case .decls(let clauseMembers) = clause.elements else {
+                            return []
+                        }
+                        return attributes(in: clauseMembers, isConditional: true)
+                    }
+                }
+                guard isConditional,
+                    let attribute = member.decl.as(EnumCaseDeclSyntax.self)?.attributes
+                        .attribute(named: "FakeCase")
+                else {
+                    return []
+                }
+                return [attribute]
+            }
+        }
+        return attributes(in: enumDecl.memberBlock.members, isConditional: false)
+    }
+
     /// The case `fake()` returns when none is marked `@FakeCase`.
     ///
     /// A case without associated values is preferred, wherever it appears, since

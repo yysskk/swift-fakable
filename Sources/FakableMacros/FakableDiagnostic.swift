@@ -43,6 +43,9 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
     /// `@FakeCase` was attached to a case of an enum without `@Fakable`.
     case unusedFakeCase
 
+    /// `@FakeCase` was attached to a case declared inside `#if`.
+    case conditionalFakeCase
+
     /// `@FakeValue` was attached to something other than a property.
     case misplacedFakeValue
 
@@ -90,6 +93,8 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
             "'@FakeCase' marks a single case; declare this case on its own"
         case .unusedFakeCase:
             "'@FakeCase' has no effect in an enum that is not '@Fakable'"
+        case .conditionalFakeCase:
+            "'@FakeCase' has no effect on a case declared inside '#if'"
         case .misplacedFakeValue:
             "'@FakeValue' can only be applied to a stored property"
         case .unusedFakeValue:
@@ -102,7 +107,8 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
 
     var severity: DiagnosticSeverity {
         switch self {
-        case .noStoredProperties, .noCases, .unusedFakeValue, .unusedFakeCase:
+        case .noStoredProperties, .noCases, .unusedFakeValue, .unusedFakeCase,
+            .conditionalFakeCase:
             .warning
         case .unsupportedDeclaration, .memberwiseInitializerUnavailable,
             .unwritableAssociatedValue, .unreadableCondition, .invalidCondition,
@@ -130,6 +136,7 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         case .misplacedFakeCase: "misplacedFakeCase"
         case .ambiguousFakeCase: "ambiguousFakeCase"
         case .unusedFakeCase: "unusedFakeCase"
+        case .conditionalFakeCase: "conditionalFakeCase"
         case .misplacedFakeValue: "misplacedFakeValue"
         case .unusedFakeValue: "unusedFakeValue"
         }

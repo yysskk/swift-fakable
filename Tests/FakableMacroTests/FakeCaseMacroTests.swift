@@ -216,4 +216,43 @@ struct FakeCaseMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("@FakeCase on a case inside #if is a warning")
+    func fakeCaseInsideConditional() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Status {
+                case unknown
+                #if DEBUG
+                @FakeCase
+                case debugging
+                #endif
+            }
+            """,
+            expandedSource: """
+                enum Status {
+                    case unknown
+                    #if DEBUG
+                    case debugging
+                    #endif
+
+                    #if DEBUG
+                    static func fake() -> Self {
+                        .unknown
+                    }
+                    #endif
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "'@FakeCase' has no effect on a case declared inside '#if'",
+                    line: 5,
+                    column: 5,
+                    severity: .warning
+                )
+            ],
+            macros: testMacros
+        )
+    }
 }

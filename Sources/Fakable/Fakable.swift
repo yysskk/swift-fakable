@@ -144,6 +144,7 @@ public macro FakeValue<Value>(
 ///
 /// - Note: Mark at most one case, on a declaration of its own:
 ///   `@FakeCase case active, inactive` would not say which one is meant.
+///   Cases inside `#if` are not considered, so a marker there warns.
 @attached(peer)
 public macro FakeCase() = #externalMacro(
     module: "FakableMacros",
