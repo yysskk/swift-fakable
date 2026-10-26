@@ -278,9 +278,11 @@ expands at compile time and cannot read a value computed at run time.
   A property whose type is inferred (`let count = 0`) is skipped, because the
   macro reads the syntax tree and has no type information to work from. Annotate
   the property to include it.
-- The `.fake()` fallback is emitted for any unrecognized type. If that type has
-  no `fake()`, the error surfaces at compile time in the generated code; add
-  `@Fakable` to it, or pass an explicit value at the call site.
+- The `.fake()` fallback is emitted for any other type written as a name. If
+  that type has no `fake()`, the error surfaces at compile time in the generated
+  code; add `@Fakable` to it, or pass an explicit value at the call site. A
+  closure, tuple, `any P`, `P & Q`, or metatype has no `fake()` to call, so its
+  parameter is required instead, and a closure parameter is marked `@escaping`.
 - Types are matched by their written spelling, so a type alias for `String`
   resolves to `.fake()` rather than `""`, and a type of your own named `Date`
   or `URL` takes the Foundation default rather than `.fake()`. The spelling is
@@ -288,10 +290,10 @@ expands at compile time and cannot read a value computed at run time.
   agree (`[String]` and `Array<String>`), and a `Swift.` or `Foundation.`
   qualifier is dropped. A type nested in one of your own, such as
   `Models.Date`, keeps the `.fake()` fallback.
-- A generic enum is an error only when *every* case carries a generic
-  associated value: `fake()` takes no parameters, so there is nowhere to get the
-  value from. A case with no associated values, or one whose values are not
-  generic, is used instead.
+- An enum is an error only when *every* case carries an associated value the
+  macro cannot write, such as a generic parameter or a closure: `fake()` takes
+  no parameters, so there is nowhere to get the value from. A case with no
+  associated values, or one whose values can all be written, is used instead.
 - The only argument `@Fakable` accepts is `condition:`, and its value must be
   written literally as `.debug`, `.always`, or `.custom("CONDITION")` with a
   string literal. Anything else is a compile-time error, as is a condition
