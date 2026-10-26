@@ -7,34 +7,32 @@ import SwiftSyntax
 /// one of your own, such as `Models.Date`, keeps its base and does not.
 private let qualifyingModuleNames: Set<String> = ["CoreGraphics", "Foundation", "Swift"]
 
-/// Resolves the value `fake()` uses for a parameter of a given type.
-///
-/// The same rules apply to a struct's stored properties and to an enum case's
-/// associated values, so both paths go through here.
-enum DefaultValue {
-    /// The value to use for `type`, or `nil` when none can be written for it.
+extension TypeSyntax {
+    /// The value `fake()` uses for a parameter of this type, or `nil` when none
+    /// can be written for it.
     ///
-    /// The table covers the stdlib types that have an obvious empty value, the
-    /// Foundation value types that stand in for one, and the collections. Every
-    /// value is deterministic, so two fakes of the same type compare equal.
+    /// The same rules apply to a struct's stored properties and to an enum
+    /// case's associated values, so both paths go through here. The table
+    /// covers the stdlib types that have an obvious empty value, the Foundation
+    /// value types that stand in for one, and the collections. Every value is
+    /// deterministic, so two fakes of the same type compare equal.
     ///
-    /// - Parameters:
-    ///   - type: The type as it was written. Matching is on that spelling, since
-    ///     the macro reads syntax and never resolves types. Sugar and longhand
-    ///     are read from the syntax tree rather than from the text, so
-    ///     `Optional<String>` is the same type to the table as `String?`,
-    ///     `Array<String>` as `[String]`, and `Dictionary<String, Int>` as
-    ///     `[String: Int]`.
-    ///   - genericParameterNames: The names the enclosing declaration introduces.
-    ///     A type built from one of these has no value the macro could write, so
-    ///     it resolves to `nil` rather than to `.fake()`.
-    static func resolve(for type: TypeSyntax, genericParameterNames: Set<String>) -> String? {
+    /// Matching is on the type as it was written, since the macro reads syntax
+    /// and never resolves types. Sugar and longhand are read from the syntax
+    /// tree rather than from the text, so `Optional<String>` is the same type
+    /// to the table as `String?`, `Array<String>` as `[String]`, and
+    /// `Dictionary<String, Int>` as `[String: Int]`.
+    ///
+    /// - Parameter genericParameterNames: The names the enclosing declaration
+    ///   introduces. A type built from one of these has no value the macro
+    ///   could write, so it resolves to `nil` rather than to `.fake()`.
+    func fakeDefaultValue(genericParameterNames: Set<String>) -> String? {
         // Ahead of the type name, so an optional of any type is nil.
-        if type.isOptional {
+        if isOptional {
             return "nil"
         }
 
-        switch type.unqualifiedSpelling {
+        switch unqualifiedSpelling {
         case "String":
             return "\"\""
         case "Int", "Int8", "Int16", "Int32", "Int64", "Int128",
@@ -63,19 +61,19 @@ enum DefaultValue {
         default:
             // Ahead of the generic check, so a collection is empty for the same
             // reason whatever it holds: the element type is never written out.
-            if type.isDictionary {
+            if isDictionary {
                 return "[:]"
             }
-            if type.isArray || type.isSet {
+            if isArray || isSet {
                 return "[]"
             }
-            if type.references(anyOf: genericParameterNames) {
+            if references(anyOf: genericParameterNames) {
                 return nil
             }
             // Only a type written as a name can have a `fake()` of its own. A
             // closure, tuple, existential or metatype has no member to call,
             // so it becomes a required parameter instead.
-            return type.isNominal ? ".fake()" : nil
+            return isNominal ? ".fake()" : nil
         }
     }
 }

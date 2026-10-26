@@ -32,10 +32,15 @@ enum AccessLevel: String {
         self == .private ? .fileprivate : self
     }
 
-    /// The modifier to write on the generated member, with its trailing space.
-    ///
-    /// Empty for ``internal``, which is the default and needs no keyword.
-    var modifier: String {
-        self == .internal ? "" : "\(rawValue) "
+    /// The keyword to write on the generated member, or `nil` for
+    /// ``internal``, which is the default and needs none.
+    var keyword: String? {
+        self == .internal ? nil : rawValue
+    }
+
+    /// `declaration` with this level's keyword in front, such as
+    /// `public static func fake` for `static func fake`.
+    func prefixing(_ declaration: String) -> String {
+        [keyword, declaration].compactMap { $0 }.joined(separator: " ")
     }
 }
