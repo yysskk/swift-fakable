@@ -124,10 +124,7 @@ enum FakeGenerator {
                     : type.trimmedDescription,
                 defaultValue: variable.fakeValue?.trimmedDescription
                     ?? declaredDefault(of: binding, accessLevel: accessLevel)
-                    ?? DefaultValue.resolve(
-                        for: type,
-                        genericParameterNames: genericParameterNames
-                    )
+                    ?? type.fakeDefaultValue(genericParameterNames: genericParameterNames)
             )
         }
     }
@@ -293,10 +290,7 @@ enum FakeGenerator {
         parameterClause.parameters.map { parameter in
             AssociatedValue(
                 label: parameter.firstName?.text,
-                value: DefaultValue.resolve(
-                    for: parameter.type,
-                    genericParameterNames: genericParameterNames
-                )
+                value: parameter.type.fakeDefaultValue(genericParameterNames: genericParameterNames)
             )
         }
     }
@@ -334,7 +328,7 @@ enum FakeGenerator {
         // memberwise initializer takes no arguments.
         guard !properties.isEmpty else {
             return """
-                \(accessLevel.modifier)static func fake() -> Self {
+                \(accessLevel.prefixing("static func fake"))() -> Self {
                     Self()
                 }
                 """
@@ -358,7 +352,7 @@ enum FakeGenerator {
         let assignmentsString = assignments.joined(separator: ",\n")
 
         return """
-            \(accessLevel.modifier)static func fake(
+            \(accessLevel.prefixing("static func fake"))(
             \(parametersString)
             ) -> Self {
                 Self(
@@ -378,7 +372,7 @@ enum FakeGenerator {
         if fakeCase.associatedValues.isEmpty {
             return condition.guarding(
                 """
-                \(accessLevel.modifier)static func fake() -> Self {
+                \(accessLevel.prefixing("static func fake"))() -> Self {
                     .\(fakeCase.name)
                 }
                 """
@@ -396,7 +390,7 @@ enum FakeGenerator {
 
         return condition.guarding(
             """
-            \(accessLevel.modifier)static func fake() -> Self {
+            \(accessLevel.prefixing("static func fake"))() -> Self {
                 .\(fakeCase.name)(\(renderedValues.joined(separator: ", ")))
             }
             """
