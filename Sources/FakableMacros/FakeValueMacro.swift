@@ -47,10 +47,17 @@ extension VariableDeclSyntax {
 
     /// Whether `fake()` takes a parameter for at least one of the properties
     /// this declaration introduces.
+    ///
+    /// Mirrors the rules `FakeGenerator` applies: a type-level, computed, or
+    /// inferred property gets no parameter, and neither does a `let` that
+    /// already has a value.
     fileprivate var takesFakeParameter: Bool {
-        !isStatic
-            && !(isConstant && bindings.allSatisfy { $0.initializer != nil })
-            && bindings.contains { $0.isStored }
+        guard !isStatic else {
+            return false
+        }
+        return bindingsWithResolvedTypes.contains { binding, type in
+            type != nil && binding.isStored && !(isConstant && binding.initializer != nil)
+        }
     }
 }
 

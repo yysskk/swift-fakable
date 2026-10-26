@@ -678,7 +678,8 @@ attribute is checked:
   `fake()`, so it is used as written.
 
 `@FakeValue` has no effect where `fake()` takes no parameter — on a `static`
-property, a computed one, a `let` that already has a value — or on a property
+property, a computed one, one whose type is inferred, a `let` that already has
+a value — or on a property
 of a type without `@Fakable`, and warns there. On anything other than a
 property it is an error.
 

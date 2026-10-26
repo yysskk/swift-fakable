@@ -164,6 +164,8 @@ struct FakeValueMacroTests {
                 static var count: Int = 0
                 @FakeValue(2)
                 let version: Int = 5
+                @FakeValue(3)
+                var revision = 1
             }
             """,
             expandedSource: """
@@ -171,6 +173,7 @@ struct FakeValueMacroTests {
                     let name: String
                     static var count: Int = 0
                     let version: Int = 5
+                    var revision = 1
 
                     #if DEBUG
                     static func fake(
@@ -199,6 +202,15 @@ struct FakeValueMacroTests {
                         property, or its type is not '@Fakable'
                         """,
                     line: 6,
+                    column: 5,
+                    severity: .warning
+                ),
+                DiagnosticSpec(
+                    message: """
+                        '@FakeValue' has no effect here; 'fake()' takes no parameter for this \
+                        property, or its type is not '@Fakable'
+                        """,
+                    line: 8,
                     column: 5,
                     severity: .warning
                 ),
