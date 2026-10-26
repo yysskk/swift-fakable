@@ -11,6 +11,11 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
     /// A struct has nothing the memberwise initializer would take.
     case noStoredProperties
 
+    /// A struct declares an `init` in its body, so Swift does not synthesize
+    /// the memberwise initializer `fake()` calls, and no declared `init`
+    /// takes its place.
+    case memberwiseInitializerUnavailable
+
     /// An enum has no case to return.
     case noCases
 
@@ -29,6 +34,11 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
             "'@Fakable' can only be applied to a struct or an enum"
         case .noStoredProperties:
             "'@Fakable' generates nothing for a struct with no stored properties"
+        case .memberwiseInitializerUnavailable:
+            """
+            '@Fakable' calls the memberwise initializer, which a struct that \
+            declares an 'init' in its body does not get; move this 'init' to an extension
+            """
         case .noCases:
             "'@Fakable' generates nothing for an enum with no cases"
         case .unwritableAssociatedValue:
@@ -52,8 +62,8 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         switch self {
         case .noStoredProperties, .noCases:
             .warning
-        case .unsupportedDeclaration, .unwritableAssociatedValue, .unreadableCondition,
-            .invalidCondition:
+        case .unsupportedDeclaration, .memberwiseInitializerUnavailable,
+            .unwritableAssociatedValue, .unreadableCondition, .invalidCondition:
             .error
         }
     }
@@ -66,6 +76,7 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         switch self {
         case .unsupportedDeclaration: "unsupportedDeclaration"
         case .noStoredProperties: "noStoredProperties"
+        case .memberwiseInitializerUnavailable: "memberwiseInitializerUnavailable"
         case .noCases: "noCases"
         case .unwritableAssociatedValue: "unwritableAssociatedValue"
         case .unreadableCondition: "unreadableCondition"

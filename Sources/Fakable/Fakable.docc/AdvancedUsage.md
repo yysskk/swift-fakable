@@ -45,9 +45,12 @@ public declarations, which the macro cannot check, so it takes a declared value
 only when that value is a literal and uses the type's default otherwise.
 
 Parameters keep declaration order, and the body forwards them to the memberwise
-initializer by label. Because it calls `Self(...)`, `fake()` is only usable
-where the memberwise initializer is — declare any custom `init` in an extension
-so the memberwise one survives.
+initializer by label. Because it calls `Self(...)`, `fake()` needs the
+memberwise initializer, which Swift synthesizes only for a struct with no `init`
+in its body — declare any custom `init` in an extension so the memberwise one
+survives. An `init` in the body that takes exactly the stored properties as
+labels, in order, and is neither failable, `throws`, nor `async` stands in for
+it; any other is an error reported on that `init`.
 
 A struct with no stored properties generates nothing, which is not an error.
 
@@ -199,6 +202,9 @@ compile-time error, reported on the attribute itself:
 
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
+
+A struct whose body declares an `init` that cannot stand in for the memberwise
+initializer is an error too, reported on that `init`.
 
 A struct with no stored properties and an enum with no cases each warn instead:
 the declaration is valid, and the attribute simply had nothing to do.

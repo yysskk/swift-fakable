@@ -274,6 +274,10 @@ expands at compile time and cannot read a value computed at run time.
   properties, and constants that already have a value are left out for that
   reason, while a `willSet` or `didSet` observer leaves a property stored and so
   keeps its parameter.
+- A struct that declares an `init` in its body has no memberwise initializer,
+  so `@Fakable` reports an error on that `init` unless it takes exactly the
+  stored properties as labels, in order. Declare a custom `init` in an
+  extension to keep the memberwise one.
 - Only stored properties with an **explicit type annotation** get a parameter.
   A property whose type is inferred (`let count = 0`) is skipped, because the
   macro reads the syntax tree and has no type information to work from. Annotate

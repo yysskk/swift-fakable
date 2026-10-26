@@ -82,6 +82,20 @@ struct StoredPropertyTests {
         #expect(TestPublicDefaults.fake(page: 3).page == 3)
     }
 
+    @Test("Init that takes the stored properties is what fake() calls")
+    func testMatchingInitializer() {
+        let normalized = TestNormalized.fake(name: "ABC", count: -1)
+
+        #expect(normalized.name == "abc")
+        #expect(normalized.count == 0)
+    }
+
+    @Test("Init declared in an extension leaves the memberwise one in place")
+    func testExtensionInitializer() {
+        #expect(TestExtensionInitialized.fake(name: "a").name == "a")
+        #expect(TestExtensionInitialized(title: "b").name == "b")
+    }
+
     @Test("Computed property is not a fake() parameter")
     func testComputedProperty() {
         #expect(TestComputed.fake(name: "a").label == "a")

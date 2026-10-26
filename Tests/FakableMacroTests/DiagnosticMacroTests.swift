@@ -111,6 +111,80 @@ struct DiagnosticMacroTests {
         )
     }
 
+    @Test("Struct with an init in its body is an error")
+    func fakableWithCustomInitializer() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                let name: String
+
+                init(title: String) {
+                    name = title
+                }
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    let name: String
+
+                    init(title: String) {
+                        name = title
+                    }
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        '@Fakable' calls the memberwise initializer, which a struct that \
+                        declares an 'init' in its body does not get; move this 'init' to an extension
+                        """,
+                    line: 5,
+                    column: 5,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Failable init with the memberwise labels does not stand in")
+    func fakableWithFailableMemberwiseLabels() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                let name: String
+
+                init?(name: String) {
+                    self.name = name
+                }
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    let name: String
+
+                    init?(name: String) {
+                        self.name = name
+                    }
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        '@Fakable' calls the memberwise initializer, which a struct that \
+                        declares an 'init' in its body does not get; move this 'init' to an extension
+                        """,
+                    line: 5,
+                    column: 5,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Enum with only closure associated values is an error")
     func fakableWithOnlyClosureAssociatedValues() {
         assertMacroExpansionForTesting(

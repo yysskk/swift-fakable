@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A struct that declares an `init` in its body, and so gets no memberwise
+  initializer, is now reported on that `init` with a message that says to move
+  it to an extension. It used to fail inside the generated code with an
+  argument-label error that did not say why. An `init` that takes exactly the
+  stored properties as labels, in order, and is neither failable, `throws`, nor
+  `async` stands in for the memberwise one and is what `fake()` calls.
+
 ### Changed
 
 - A `var` that declares its own value now defaults to that value in `fake()`,
