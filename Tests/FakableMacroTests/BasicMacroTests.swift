@@ -391,4 +391,118 @@ struct BasicMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Type that is not written as a name is a required parameter")
+    func fakableWithNonNominalTypes() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                let pair: (Int, String)
+                let shape: any Shape
+                let both: Shape & Sendable
+                let kind: Item.Type
+                let size: [3 of Int]
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    let pair: (Int, String)
+                    let shape: any Shape
+                    let both: Shape & Sendable
+                    let kind: Item.Type
+                    let size: [3 of Int]
+
+                    #if DEBUG
+                    static func fake(
+                        pair: (Int, String),
+                        shape: any Shape,
+                        both: Shape & Sendable,
+                        kind: Item.Type,
+                        size: [3 of Int]
+                    ) -> Self {
+                        Self(
+                            pair: pair,
+                            shape: shape,
+                            both: both,
+                            kind: kind,
+                            size: size
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Function-typed property is a required escaping parameter")
+    func fakableWithFunctionTypes() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Button {
+                let onTap: () -> Void
+                let onChange: @Sendable (Int) -> Void
+                let onDone: (() -> Void)
+                let onCancel: (() -> Void)?
+            }
+            """,
+            expandedSource: """
+                struct Button {
+                    let onTap: () -> Void
+                    let onChange: @Sendable (Int) -> Void
+                    let onDone: (() -> Void)
+                    let onCancel: (() -> Void)?
+
+                    #if DEBUG
+                    static func fake(
+                        onTap: @escaping () -> Void,
+                        onChange: @escaping @Sendable (Int) -> Void,
+                        onDone: @escaping (() -> Void),
+                        onCancel: (() -> Void)? = nil
+                    ) -> Self {
+                        Self(
+                            onTap: onTap,
+                            onChange: onChange,
+                            onDone: onDone,
+                            onCancel: onCancel
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Function-typed property with a value defaults to that value")
+    func fakableWithInitializedFunctionType() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Button {
+                var onTap: () -> Void = Self.ignore
+                static func ignore() {}
+            }
+            """,
+            expandedSource: """
+                struct Button {
+                    var onTap: () -> Void = Self.ignore
+                    static func ignore() {}
+
+                    #if DEBUG
+                    static func fake(
+                        onTap: @escaping () -> Void = Self.ignore
+                    ) -> Self {
+                        Self(
+                            onTap: onTap
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 }

@@ -111,6 +111,35 @@ struct DiagnosticMacroTests {
         )
     }
 
+    @Test("Enum with only closure associated values is an error")
+    func fakableWithOnlyClosureAssociatedValues() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Action {
+                case run(() -> Void)
+            }
+            """,
+            expandedSource: """
+                enum Action {
+                    case run(() -> Void)
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        '@Fakable' cannot write a value for any case of this enum; \
+                        every case carries an associated value with no default, such as a generic or a closure
+                        """,
+                    line: 1,
+                    column: 1,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
     @Test("Generic enum with only generic associated values is an error")
     func fakableWithUnwritableAssociatedValue() {
         assertMacroExpansionForTesting(
@@ -129,7 +158,7 @@ struct DiagnosticMacroTests {
                 DiagnosticSpec(
                     message: """
                         '@Fakable' cannot write a value for any case of this enum; \
-                        every case carries a generic associated value
+                        every case carries an associated value with no default, such as a generic or a closure
                         """,
                     line: 1,
                     column: 1,

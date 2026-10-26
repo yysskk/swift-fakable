@@ -136,7 +136,8 @@ static func fake() -> Self {
 | `Set` (`Set<T>`) | `[]` |
 | `Optional` (`T?`, `T!`, or `Optional<T>`) | `nil` |
 | a generic parameter of the type | none — the parameter is required |
-| anything else | `.fake()` |
+| a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
+| any other named type | `.fake()` |
 
 Every default is deterministic, so two fakes of the same model are equal where
 the model is `Equatable`.
@@ -507,11 +508,12 @@ enum Event {
 | `[T]` or `Array<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
-| anything else | `.fake()` |
+| a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
+| any other named type | `.fake()` |
 
 The same table is used for struct properties and for enum associated values.
 
-Six details are worth spelling out:
+Seven details are worth spelling out:
 
 - **Optional wins first.** `String?` is `nil`, not `""`. This is checked before
   the type name, so an optional of any type defaults to `nil`.
@@ -533,6 +535,11 @@ Six details are worth spelling out:
   to `.fake()`, not `""`, because the macro sees the text `UserID`. Either write
   the underlying type, add `@Fakable` to the alias target, or pass the value
   explicitly at the call site.
+- **Only a named type falls back to `.fake()`.** A closure, a tuple, an
+  existential such as `any Shape`, a composition such as `Shape & Sendable`, and
+  a metatype have no `fake()` to call, so each is a required parameter. A
+  closure parameter is also marked `@escaping`, since `fake()` stores it; an
+  optional closure is escaping already and defaults to `nil`.
 - **A generic parameter gets no default.** There is no value the macro could
   write for it, so the parameter is required instead (see
   [Generic types](#generic-types)). The check is made token by token, so a type
@@ -608,8 +615,8 @@ enum Wrapped<T> {
 }
 ```
 
-Only when *every* case carries a generic associated value does the macro report
-an error, rather than generating something that cannot compile.
+Only when *every* case carries an associated value it cannot write — a generic
+parameter, a closure, a tuple — does the macro report an error, rather than generating something that cannot compile.
 
 ## Access levels
 

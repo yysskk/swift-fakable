@@ -1,6 +1,9 @@
 /// A stored property of a struct that `fake()` needs a parameter for.
 struct StoredProperty {
     let name: String
+
+    /// The parameter type, as the property declares it, marked `@escaping`
+    /// when it is a function type.
     let type: String
 
     /// The value the parameter defaults to, or `nil` when the parameter has to

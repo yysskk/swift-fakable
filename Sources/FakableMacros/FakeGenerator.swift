@@ -42,7 +42,9 @@ enum FakeGenerator {
 
                 return StoredProperty(
                     name: identifier.identifier.text,
-                    type: type.trimmedDescription,
+                    type: type.isFunction
+                        ? "@escaping \(type.trimmedDescription)"
+                        : type.trimmedDescription,
                     defaultValue: declaredDefault(of: binding, accessLevel: accessLevel)
                         ?? DefaultValue.resolve(
                             for: type,

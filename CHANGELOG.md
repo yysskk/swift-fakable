@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A property of function type is now an `@escaping` parameter. Without the
+  attribute the generated method failed to compile with `passing non-escaping
+  parameter to function expecting an '@escaping' closure`, so no model with a
+  closure property could use `@Fakable`. An optional closure is escaping
+  already and keeps its `nil` default.
+- A closure, tuple, `any P`, `P & Q`, or metatype property is now a required
+  parameter rather than defaulting to `.fake()`, which none of them can have.
+  The enum diagnostic for a case with only such values now names them.
+
 - A `private` struct or enum now gets a `fileprivate fake()` rather than a
   `private` one. A `private` member is visible only inside its type and that
   type's extensions, so `fake()` could not be called from anywhere else in the

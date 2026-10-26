@@ -137,7 +137,8 @@ static func fake() -> Self {
 | `Set` (`Set<T>`) | `[]` |
 | `Optional` (`T?`, `T!`, or `Optional<T>`) | `nil` |
 | a generic parameter of the type | none — the parameter is required |
-| anything else | `.fake()` |
+| a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
+| any other named type | `.fake()` |
 
 Every default is deterministic, so two fakes of the same model are equal where
 the model is `Equatable`.

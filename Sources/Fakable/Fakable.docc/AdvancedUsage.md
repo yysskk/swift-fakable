@@ -95,7 +95,8 @@ Labels on associated values are preserved when present and omitted when not:
 | `[T]` or `Array<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
-| anything else | `.fake()` |
+| a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
+| any other named type | `.fake()` |
 
 - **Optional wins first.** `String?` is `nil`, not `""`.
 - **Sugar and longhand are the same type**, since which collection a type is
@@ -107,6 +108,9 @@ Labels on associated values are preserved when present and omitted when not:
   `CoreGraphics` count as qualifiers; `Models.Date` keeps the `.fake()` fallback.
 - **A Foundation value type gets a deterministic value**: `Date` is the epoch
   and `UUID` is the nil UUID, so two fakes of the same model are equal.
+- **Only a named type falls back to `.fake()`.** A closure, tuple, `any P`,
+  `P & Q`, or metatype is a required parameter instead, and a closure
+  parameter is marked `@escaping`.
 - **Matching is on the written spelling.** `typealias UserID = String` resolves
   to `.fake()`, not `""`. Write the underlying type, make the alias target
   `@Fakable`, or pass the value explicitly.
@@ -138,8 +142,8 @@ Types that merely involve a generic parameter without needing a value of it —
 For enums the same situation has no answer, because `fake()` takes no
 parameters. A generic enum works as long as some case can be written — one with
 no associated values, or one whose values are not generic. Only when *every*
-case carries a generic associated value does the macro report an error, rather
-than generating something that cannot compile.
+case carries an associated value it cannot write — a generic parameter, a
+closure, a tuple — does the macro report an error, rather than generating something that cannot compile.
 
 ## Access levels
 
