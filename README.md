@@ -252,7 +252,7 @@ expands at compile time and cannot read a value computed at run time.
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
-- Per-property defaults with `@FakeValue`
+- Per-property defaults with `@FakeValue`, and the enum case with `@FakeCase`
 - Configurable compilation condition (`condition:` — `#if DEBUG` by default, a custom condition, or no guard)
 
 ## Behavioral Notes
@@ -288,6 +288,17 @@ expands at compile time and cannot read a value computed at run time.
   enum Account {
       case user(id: String)                  // fake() returns .user(id: "")
       case admin(id: String, level: Int)
+  }
+  ```
+
+- Mark a case `@FakeCase` to have `fake()` return it instead:
+
+  ```swift
+  @Fakable
+  enum Status {
+      case unknown
+      @FakeCase
+      case active             // fake() returns .active
   }
   ```
 

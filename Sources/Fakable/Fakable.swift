@@ -50,9 +50,10 @@
 /// let sex = Sex.fake() // .man
 /// ```
 ///
-/// `fake()` returns the first case that has no associated values. When every
-/// case has associated values, the first case is used and its values are filled
-/// in with the same defaults listed above.
+/// `fake()` returns the case marked ``FakeCase()``, or else the first case that
+/// has no associated values. When every case has associated values, the first
+/// one whose values can all be written is used, filled in with the same
+/// defaults listed above.
 ///
 /// ## Availability
 ///
@@ -119,3 +120,33 @@ public macro Fakable(
 public macro FakeValue<Value>(
     _ value: Value
 ) = #externalMacro(module: "FakableMacros", type: "FakeValueMacro")
+
+/// Selects the case a `@Fakable` enum's `fake()` returns.
+///
+/// Without it, `fake()` returns the first case that has no associated values.
+/// Mark another case when that is not a useful starting point:
+///
+/// ```swift
+/// @Fakable
+/// enum Status {
+///     case unknown
+///     @FakeCase
+///     case active
+///     case inactive
+/// }
+///
+/// Status.fake() // .active
+/// ```
+///
+/// A marked case with associated values gets them filled in from their types,
+/// the same way an unmarked one does, and is an error when one of them has no
+/// value the macro can write.
+///
+/// - Note: Mark at most one case, on a declaration of its own:
+///   `@FakeCase case active, inactive` would not say which one is meant.
+///   Cases inside `#if` are not considered, so a marker there warns.
+@attached(peer)
+public macro FakeCase() = #externalMacro(
+    module: "FakableMacros",
+    type: "FakeCaseMacro"
+)

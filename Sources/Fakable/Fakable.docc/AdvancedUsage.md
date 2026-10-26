@@ -63,10 +63,12 @@ A struct with no stored properties generates nothing, which is not an error.
 
 ## Which enum case `fake()` returns
 
-1. The first case **without** associated values, wherever it appears — it needs
-   no values invented for it, so it always wins.
-2. Otherwise the first case, with each associated value defaulted.
-3. An enum with no cases generates nothing, and the macro warns.
+1. The case marked ``FakeCase()``, if there is one.
+2. Otherwise the first case **without** associated values, wherever it appears
+   — it needs no values invented for it.
+3. Otherwise the first case whose values can all be written, with each
+   associated value defaulted.
+4. An enum with no cases generates nothing, and the macro warns.
 
 ```swift
 @Fakable
@@ -82,6 +84,10 @@ enum Account {
     case admin(id: String, level: Int)
 }
 ```
+
+A marked case's values are filled in the same way, and one the macro cannot
+write is an error on the marker. Mark at most one case, on a declaration of its
+own.
 
 Labels on associated values are preserved when present and omitted when not:
 `case tapped(String, at: Int)` fakes as `.tapped("", at: 0)`.
@@ -239,6 +245,11 @@ the declaration is valid, and the attribute simply had nothing to do.
 
 ``FakeValue(_:)`` warns where `fake()` takes no parameter for the property or
 the type is not `@Fakable`, and is an error on anything other than a property.
+
+``FakeCase()`` is an error on a case with a value the macro cannot write, on a
+second marked case, on a declaration of several cases, and on anything other
+than a case, and it warns in an enum without `@Fakable` and on a case inside
+`#if`.
 
 The `condition:` argument has two errors of its own, for a value that is not
 written literally and for a condition `#if` would reject.

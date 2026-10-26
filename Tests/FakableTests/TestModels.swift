@@ -178,6 +178,14 @@ struct TestAccount {
 }
 
 @Fakable
+enum TestConnection: Equatable {
+    case unknown
+    @FakeCase
+    case connected(host: String, port: Int)
+    case disconnected
+}
+
+@Fakable
 struct TestComputed {
     let name: String
     var label: String {

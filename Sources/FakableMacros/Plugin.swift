@@ -7,5 +7,6 @@ struct FakablePlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         FakableMacro.self,
         FakeValueMacro.self,
+        FakeCaseMacro.self,
     ]
 }

@@ -61,4 +61,9 @@ struct EnumTests {
             Issue.record("Expected .success(value: 0, message: \"\", isValid: false), got \(result)")
         }
     }
+
+    @Test("Case marked @FakeCase is what fake() returns")
+    func testFakeCase() {
+        #expect(TestConnection.fake() == .connected(host: "", port: 0))
+    }
 }

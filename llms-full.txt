@@ -251,7 +251,7 @@ expands at compile time and cannot read a value computed at run time.
 - Nested `@Fakable` types through the `.fake()` fallback
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
-- Per-property defaults with `@FakeValue`
+- Per-property defaults with `@FakeValue`, and the enum case with `@FakeCase`
 - Configurable compilation condition (`condition:` — `#if DEBUG` by default, a custom condition, or no guard)
 
 ## Behavioral Notes
@@ -287,6 +287,17 @@ expands at compile time and cannot read a value computed at run time.
   enum Account {
       case user(id: String)                  // fake() returns .user(id: "")
       case admin(id: String, level: Int)
+  }
+  ```
+
+- Mark a case `@FakeCase` to have `fake()` return it instead:
+
+  ```swift
+  @Fakable
+  enum Status {
+      case unknown
+      @FakeCase
+      case active             // fake() returns .active
   }
   ```
 
@@ -543,11 +554,12 @@ default and no initializer call to make, so the attribute had no effect.
 
 ### Which case `fake()` returns
 
-1. The **first case without associated values**, wherever it appears in the
-   declaration. It needs no values invented for it, so it is always preferred.
-2. If every case has associated values, the **first case**, with each value
-   filled in from the default table.
-3. If the enum has no cases at all, nothing is generated and the macro warns.
+1. The case marked **`@FakeCase`**, if there is one, whatever it carries.
+2. Otherwise the **first case without associated values**, wherever it appears
+   in the declaration. It needs no values invented for it, so it is preferred.
+3. If every case has associated values, the **first case** whose values can
+   all be written, with each value filled in from the default table.
+4. If the enum has no cases at all, nothing is generated and the macro warns.
 
 ```swift
 @Fakable
@@ -564,8 +576,28 @@ enum Account {
 }
 ```
 
-Note that the search in step 1 scans all cases, including the later elements of
+Note that the search in step 2 scans all cases, including the later elements of
 a comma-separated `case a, b` list.
+
+Mark a case `@FakeCase` when the automatic choice is not a useful starting
+point:
+
+```swift
+@Fakable
+enum Connection {
+    case unknown
+    @FakeCase
+    case connected(host: String, port: Int)   // fake() == .connected(host: "", port: 0)
+    case disconnected
+}
+```
+
+A marked case's associated values are filled in the same way, and a value the
+macro cannot write — a generic parameter, a closure — is an error on the marker
+rather than a reason to pick another case. Mark at most one case, on a
+declaration of its own: `@FakeCase case a, b` would not say which is meant, and
+both mistakes are errors. `@FakeCase` in an enum without `@Fakable` warns, and
+so does one on a case inside `#if`, since those cases are not considered.
 
 ### Labeled and unlabeled associated values
 
@@ -846,6 +878,19 @@ than a property:
 ```
 '@FakeValue' has no effect here; 'fake()' takes no parameter for this property, or its type is not '@Fakable'
 '@FakeValue' can only be applied to a stored property
+```
+
+`@FakeCase` is an error on a case with a value the macro cannot write, on a
+second marked case, on a declaration of several cases, and on anything other
+than a case; it warns in an enum without `@Fakable` and on a case inside `#if`:
+
+```
+'@FakeCase' marks a case with an associated value that has no default, such as a generic or a closure
+'@FakeCase' can mark only one case of an enum
+'@FakeCase' marks a single case; declare this case on its own
+'@FakeCase' can only be applied to an enum case
+'@FakeCase' has no effect in an enum that is not '@Fakable'
+'@FakeCase' has no effect on a case declared inside '#if'
 ```
 
 The `condition:` argument has two errors of its own, for a value that is not

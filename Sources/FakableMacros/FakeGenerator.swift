@@ -181,12 +181,65 @@ enum FakeGenerator {
         return isCovered ? nil : first
     }
 
-    /// The case `fake()` returns.
+    /// The cases marked `@FakeCase`, each with the attribute that marks it,
+    /// in declaration order.
+    static func markedCases(
+        of enumDecl: EnumDeclSyntax
+    ) -> [(fakeCase: EnumCaseInfo, attribute: AttributeSyntax)] {
+        let genericParameterNames = enumDecl.genericParameterClause.parameterNames
+
+        return enumDecl.memberBlock.members.compactMap { member in
+            guard let caseDecl = member.decl.as(EnumCaseDeclSyntax.self),
+                let attribute = caseDecl.attributes.attribute(named: "FakeCase"),
+                let element = caseDecl.elements.first
+            else {
+                return nil
+            }
+
+            let fakeCase = EnumCaseInfo(
+                name: element.name.text,
+                parameters: element.parameterClause.map {
+                    enumCaseParameters(of: $0, genericParameterNames: genericParameterNames)
+                } ?? []
+            )
+            return (fakeCase: fakeCase, attribute: attribute)
+        }
+    }
+
+    /// The `@FakeCase` attributes on cases declared inside `#if`, at any depth.
+    ///
+    /// Cases inside `#if` are not considered when choosing what `fake()`
+    /// returns, so a marker there would otherwise be ignored without a word.
+    static func conditionalFakeCaseAttributes(of enumDecl: EnumDeclSyntax) -> [AttributeSyntax] {
+        func attributes(in members: MemberBlockItemListSyntax, isConditional: Bool) -> [AttributeSyntax] {
+            members.flatMap { member -> [AttributeSyntax] in
+                if let ifConfig = member.decl.as(IfConfigDeclSyntax.self) {
+                    return ifConfig.clauses.flatMap { clause -> [AttributeSyntax] in
+                        guard case .decls(let clauseMembers) = clause.elements else {
+                            return []
+                        }
+                        return attributes(in: clauseMembers, isConditional: true)
+                    }
+                }
+                guard isConditional,
+                    let attribute = member.decl.as(EnumCaseDeclSyntax.self)?.attributes
+                        .attribute(named: "FakeCase")
+                else {
+                    return []
+                }
+                return [attribute]
+            }
+        }
+        return attributes(in: enumDecl.memberBlock.members, isConditional: false)
+    }
+
+    /// The case `fake()` returns when none is marked `@FakeCase`.
     ///
     /// A case without associated values is preferred, wherever it appears, since
     /// it needs no values invented for it. Only when every case carries
-    /// associated values does the first case win, with values filled in.
-    static func firstCase(of enumDecl: EnumDeclSyntax) -> EnumCaseInfo? {
+    /// associated values does the first case whose values can all be written
+    /// win, with values filled in.
+    static func fakeCase(of enumDecl: EnumDeclSyntax) -> EnumCaseInfo? {
         let members = enumDecl.memberBlock.members
 
         // First, try to find a case without associated values
@@ -320,16 +373,16 @@ enum FakeGenerator {
     /// The enum `fake()` source, or `nil` when no value can be written for one
     /// of the case's associated values.
     static func enumFakeMethod(
-        firstCase: EnumCaseInfo,
+        for fakeCase: EnumCaseInfo,
         accessLevel: AccessLevel,
         condition: CompilationCondition
     ) -> String? {
-        if firstCase.parameters.isEmpty {
+        if fakeCase.parameters.isEmpty {
             // Case without associated values
             return condition.guarding(
                 """
                 \(accessLevel.modifier)static func fake() -> Self {
-                    .\(firstCase.name)
+                    .\(fakeCase.name)
                 }
                 """
             )
@@ -337,7 +390,7 @@ enum FakeGenerator {
 
         // Case with associated values - fill each one in from its type
         var renderedValues: [String] = []
-        for parameter in firstCase.parameters {
+        for parameter in fakeCase.parameters {
             guard let value = parameter.value else {
                 return nil
             }
@@ -347,7 +400,7 @@ enum FakeGenerator {
         return condition.guarding(
             """
             \(accessLevel.modifier)static func fake() -> Self {
-                .\(firstCase.name)(\(renderedValues.joined(separator: ", ")))
+                .\(fakeCase.name)(\(renderedValues.joined(separator: ", ")))
             }
             """
         )
