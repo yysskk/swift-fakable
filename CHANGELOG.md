@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A `var` that declares its own value now defaults to that value in `fake()`,
+  the way the memberwise initializer does, instead of to its type's default.
+  `var page: Int = 1` gives `page: Int = 1` rather than `0`, and
+  `var note: String? = "draft"` gives `"draft"` rather than `nil`. A
+  `public fake()` uses the declared value only when it is a literal, because a
+  public function's default arguments may reference only public declarations;
+  any other value keeps the type's default there.
+
 ### Fixed
 
 - A `private` struct or enum now gets a `fileprivate fake()` rather than a

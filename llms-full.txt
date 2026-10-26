@@ -235,7 +235,8 @@ expands at compile time and cannot read a value computed at run time.
   body forwards them to the memberwise initializer by label. One declaration can
   introduce several of them: `let x, y: Int` yields a parameter each.
 - A stored property that declares its own value (`var page: Int = 1`) still gets
-  a parameter, defaulted from its type rather than from the declared value.
+  a parameter, defaulted to that value. A `public fake()` uses the value only
+  when it is a literal, and the type's default otherwise.
 - For enums, a case **without** associated values is preferred no matter where it
   appears in the declaration, because it needs no values invented for it:
 
@@ -388,6 +389,36 @@ as a `var`, since a `let` with a value is not in the memberwise initializer.
 One declaration can introduce several properties, and they each get a parameter:
 both `let x: Int, y: Int` and `let x, y: Int` yield `x` and `y`, the second by
 sharing the single annotation.
+
+### A property that declares its own value
+
+A `var` with a value of its own defaults to that value, exactly as the
+memberwise initializer does, so a fake starts from the state the model
+describes:
+
+```swift
+@Fakable
+struct Query {
+    static let defaultPageSize = 20
+
+    var page: Int = 1
+    var pageSize: Int = Self.defaultPageSize
+}
+
+Query.fake()          // page 1, pageSize 20
+Query.fake(page: 3)   // page 3, pageSize 20
+```
+
+The declared value wins over the type's default, so `var note: String? = "draft"`
+fakes as `"draft"` rather than `nil`.
+
+A `public fake()` is the one exception. Swift emits a public function's default
+arguments into its callers, so they may reference only public declarations, and
+the macro cannot tell whether `Self.defaultPageSize` is one. A `public fake()`
+therefore takes a declared value only when it is a literal — a number, a string
+without interpolation, `true` / `false`, `nil`, or an array or dictionary
+literal of those — and uses the type's default otherwise. `package` and
+narrower levels take any value as written.
 
 ### Parameter order and the initializer
 

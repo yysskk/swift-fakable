@@ -91,6 +91,23 @@ struct TestVersioned {
 }
 
 @Fakable
+struct TestPaged {
+    static let firstPage = 1
+
+    var page: Int = Self.firstPage
+    var note: String? = "draft"
+}
+
+@Fakable
+public struct TestPublicDefaults {
+    static let firstPage = 1
+
+    public var limit: Int = 20
+    public var tags: [String] = ["a"]
+    public var page: Int = Self.firstPage
+}
+
+@Fakable
 struct TestComputed {
     let name: String
     var label: String {

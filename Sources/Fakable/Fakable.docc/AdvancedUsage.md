@@ -37,6 +37,13 @@ The type-annotation requirement is the one that surprises people: the macro has
 no type information, so an inferred property gives it nothing to write a
 parameter type from. Annotate it to include it.
 
+A `var` that declares its own value defaults to that value, as the memberwise
+initializer does: `var page: Int = 1` gives `page: Int = 1`, and
+`var note: String? = "draft"` gives `"draft"` rather than `nil`. A
+`public fake()` is the exception. Its default arguments may reference only
+public declarations, which the macro cannot check, so it takes a declared value
+only when that value is a literal and uses the type's default otherwise.
+
 Parameters keep declaration order, and the body forwards them to the memberwise
 initializer by label. Because it calls `Self(...)`, `fake()` is only usable
 where the memberwise initializer is — declare any custom `init` in an extension

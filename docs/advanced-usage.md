@@ -59,6 +59,36 @@ One declaration can introduce several properties, and they each get a parameter:
 both `let x: Int, y: Int` and `let x, y: Int` yield `x` and `y`, the second by
 sharing the single annotation.
 
+### A property that declares its own value
+
+A `var` with a value of its own defaults to that value, exactly as the
+memberwise initializer does, so a fake starts from the state the model
+describes:
+
+```swift
+@Fakable
+struct Query {
+    static let defaultPageSize = 20
+
+    var page: Int = 1
+    var pageSize: Int = Self.defaultPageSize
+}
+
+Query.fake()          // page 1, pageSize 20
+Query.fake(page: 3)   // page 3, pageSize 20
+```
+
+The declared value wins over the type's default, so `var note: String? = "draft"`
+fakes as `"draft"` rather than `nil`.
+
+A `public fake()` is the one exception. Swift emits a public function's default
+arguments into its callers, so they may reference only public declarations, and
+the macro cannot tell whether `Self.defaultPageSize` is one. A `public fake()`
+therefore takes a declared value only when it is a literal — a number, a string
+without interpolation, `true` / `false`, `nil`, or an array or dictionary
+literal of those — and uses the type's default otherwise. `package` and
+narrower levels take any value as written.
+
 ### Parameter order and the initializer
 
 Parameters keep the declaration order of the stored properties, and the body
