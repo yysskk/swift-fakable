@@ -20,6 +20,18 @@ enum AccessLevel: String {
             .first ?? .internal
     }
 
+    /// The level a member needs to be reachable everywhere its type is.
+    ///
+    /// A `private` member is visible only inside its type and that type's
+    /// extensions in the same file, which is narrower than a `private` type,
+    /// so a `private static func fake()` could not be called even from the
+    /// rest of the file. `private` widens to `fileprivate` for that reason.
+    /// Every other level carries over unchanged, and the member can never end
+    /// up more visible than the type that holds it.
+    var memberLevel: AccessLevel {
+        self == .private ? .fileprivate : self
+    }
+
     /// The modifier to write on the generated member, with its trailing space.
     ///
     /// Empty for ``internal``, which is the default and needs no keyword.

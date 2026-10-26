@@ -121,7 +121,7 @@ struct AccessLevelMacroTests {
         )
     }
 
-    @Test("Private struct generates private fake()")
+    @Test("Private struct generates fileprivate fake()")
     func fakableWithPrivateStruct() {
         assertMacroExpansionForTesting(
             """
@@ -135,7 +135,7 @@ struct AccessLevelMacroTests {
                     let name: String
 
                     #if DEBUG
-                    private static func fake(
+                    fileprivate static func fake(
                         name: String = ""
                     ) -> Self {
                         Self(
@@ -231,7 +231,7 @@ struct AccessLevelMacroTests {
         )
     }
 
-    @Test("Private enum generates private fake()")
+    @Test("Private enum generates fileprivate fake()")
     func fakableWithPrivateEnum() {
         assertMacroExpansionForTesting(
             """
@@ -247,7 +247,7 @@ struct AccessLevelMacroTests {
                     case inactive
 
                     #if DEBUG
-                    private static func fake() -> Self {
+                    fileprivate static func fake() -> Self {
                         .active
                     }
                     #endif

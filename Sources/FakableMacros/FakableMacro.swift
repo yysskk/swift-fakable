@@ -32,7 +32,7 @@ public struct FakableMacro: MemberMacro {
 
             let fakeMethod = FakeGenerator.fakeMethod(
                 for: storedProperties,
-                accessLevel: AccessLevel(of: declaration),
+                accessLevel: AccessLevel(of: declaration).memberLevel,
                 condition: condition
             )
             return [DeclSyntax(stringLiteral: fakeMethod)]
@@ -47,7 +47,7 @@ public struct FakableMacro: MemberMacro {
             guard
                 let fakeMethod = FakeGenerator.enumFakeMethod(
                     firstCase: firstCase,
-                    accessLevel: AccessLevel(of: declaration),
+                    accessLevel: AccessLevel(of: declaration).memberLevel,
                     condition: condition
                 )
             else {

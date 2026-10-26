@@ -1,6 +1,20 @@
 import Fakable
 import Testing
 
+// Declared here rather than in TestModels.swift: a private type is visible only
+// in its own file, and the point is that its fake() is callable from the rest
+// of that file.
+@Fakable
+private struct PrivateItem {
+    let name: String
+}
+
+@Fakable
+private enum PrivateStatus {
+    case idle
+    case running
+}
+
 @Suite("Access Level Tests")
 struct AccessLevelTests {
     @Test("Public struct generates accessible fake() method")
@@ -29,5 +43,16 @@ struct AccessLevelTests {
     @Test("Package enum generates a package fake()")
     func testPackageEnumAccessLevel() {
         #expect(TestPackagedStatus.fake() == .active)
+    }
+
+    @Test("Private struct's fake() is callable from the rest of the file")
+    func testPrivateStruct() {
+        #expect(PrivateItem.fake().name == "")
+        #expect(PrivateItem.fake(name: "a").name == "a")
+    }
+
+    @Test("Private enum's fake() is callable from the rest of the file")
+    func testPrivateEnum() {
+        #expect(PrivateStatus.fake() == .idle)
     }
 }

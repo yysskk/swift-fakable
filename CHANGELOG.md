@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A `private` struct or enum now gets a `fileprivate fake()` rather than a
+  `private` one. A `private` member is visible only inside its type and that
+  type's extensions, so `fake()` could not be called from anywhere else in the
+  file and failed with `'fake' is inaccessible due to 'private' protection
+  level`.
+
 ## [0.3.0] - 2026-10-16
 
 ### Added

@@ -144,7 +144,13 @@ The generated method carries the access level of its type:
 | `package struct` | `package static func fake(...)` |
 | `struct` / `internal struct` | `static func fake(...)` |
 | `fileprivate struct` | `fileprivate static func fake(...)` |
-| `private struct` | `private static func fake(...)` |
+| `private struct` | `fileprivate static func fake(...)` |
+
+A `private` type is the one exception: its `fake()` is `fileprivate`. A
+`private` member is visible only inside its type and that type's extensions in
+the same file, so a `private fake()` could not be called even from the rest of
+the file the type lives in. `fileprivate` is as visible as the type itself and
+no more.
 
 A `public fake()` works from another module even though the memberwise
 initializer it calls is `internal` by default: only a signature has to be as
