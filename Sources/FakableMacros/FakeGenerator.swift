@@ -5,7 +5,8 @@ enum FakeGenerator {
 
     // MARK: - Extraction
 
-    /// The stored properties `fake()` takes a parameter for, in declaration order.
+    /// The stored properties `fake()` takes a parameter for, in declaration
+    /// order, for each build configuration the struct's `#if` blocks describe.
     ///
     /// These are exactly the properties the memberwise initializer takes, since
     /// that is what the generated method calls. Type-level properties, computed
@@ -20,38 +21,110 @@ enum FakeGenerator {
     /// itself describes. `accessLevel` is the level of the generated method,
     /// which decides whether the value can be used (see
     /// ``declaredDefault(of:accessLevel:)``).
-    static func storedProperties(
+    static func storedPropertyLayout(
         of structDecl: StructDeclSyntax,
         accessLevel: AccessLevel
-    ) -> [StoredProperty] {
-        let genericParameterNames = structDecl.genericParameterClause.parameterNames
+    ) -> StoredPropertyLayout {
+        layout(
+            of: Array(structDecl.memberBlock.members),
+            after: [],
+            genericParameterNames: structDecl.genericParameterClause.parameterNames,
+            accessLevel: accessLevel
+        )
+    }
 
-        return structDecl.memberBlock.members.flatMap { member -> [StoredProperty] in
-            guard let variable = member.decl.as(VariableDeclSyntax.self), !variable.isStatic else {
-                return []
+    /// The layout of `members`, with `prefix` already declared ahead of them.
+    ///
+    /// A `#if` block splits the layout: each clause continues with its own
+    /// members followed by everything after the block, since the memberwise
+    /// initializer of that configuration takes both. A block without `#else`
+    /// gains one, because the configuration where no clause holds has an
+    /// initializer too. A block whose clauses all end up with the same
+    /// properties, such as one holding only methods, is not split at all.
+    private static func layout(
+        of members: [MemberBlockItemSyntax],
+        after prefix: [StoredProperty],
+        genericParameterNames: Set<String>,
+        accessLevel: AccessLevel
+    ) -> StoredPropertyLayout {
+        var properties = prefix
+
+        for (index, member) in members.enumerated() {
+            guard let ifConfig = member.decl.as(IfConfigDeclSyntax.self) else {
+                properties += storedProperties(
+                    in: member,
+                    genericParameterNames: genericParameterNames,
+                    accessLevel: accessLevel
+                )
+                continue
             }
 
-            return variable.bindingsWithResolvedTypes.compactMap { binding, type -> StoredProperty? in
-                guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
-                    let type,
-                    binding.isStored,
-                    !(variable.isConstant && binding.initializer != nil)
-                else {
-                    return nil
-                }
-
-                return StoredProperty(
-                    name: identifier.identifier.text,
-                    type: type.isFunction
-                        ? "@escaping \(type.trimmedDescription)"
-                        : type.trimmedDescription,
-                    defaultValue: declaredDefault(of: binding, accessLevel: accessLevel)
-                        ?? DefaultValue.resolve(
-                            for: type,
-                            genericParameterNames: genericParameterNames
-                        )
+            let remainder = Array(members[(index + 1)...])
+            func clauseLayout(_ clauseMembers: [MemberBlockItemSyntax]) -> StoredPropertyLayout {
+                layout(
+                    of: clauseMembers + remainder,
+                    after: properties,
+                    genericParameterNames: genericParameterNames,
+                    accessLevel: accessLevel
                 )
             }
+
+            var clauses = ifConfig.clauses.map { clause in
+                StoredPropertyLayout.Clause(
+                    keyword: clause.poundKeyword.text,
+                    condition: clause.condition?.trimmedDescription,
+                    layout: clauseLayout(clause.memberItems)
+                )
+            }
+            if !ifConfig.clauses.contains(where: { $0.poundKeyword.tokenKind == .poundElse }) {
+                clauses.append(
+                    StoredPropertyLayout.Clause(
+                        keyword: "#else",
+                        condition: nil,
+                        layout: clauseLayout([])
+                    )
+                )
+            }
+
+            if let first = clauses.first, clauses.allSatisfy({ $0.layout == first.layout }) {
+                return first.layout
+            }
+            return .conditional(clauses)
+        }
+
+        return .unconditional(properties)
+    }
+
+    /// The stored properties a single member declares.
+    private static func storedProperties(
+        in member: MemberBlockItemSyntax,
+        genericParameterNames: Set<String>,
+        accessLevel: AccessLevel
+    ) -> [StoredProperty] {
+        guard let variable = member.decl.as(VariableDeclSyntax.self), !variable.isStatic else {
+            return []
+        }
+
+        return variable.bindingsWithResolvedTypes.compactMap { binding, type -> StoredProperty? in
+            guard let identifier = binding.pattern.as(IdentifierPatternSyntax.self),
+                let type,
+                binding.isStored,
+                !(variable.isConstant && binding.initializer != nil)
+            else {
+                return nil
+            }
+
+            return StoredProperty(
+                name: identifier.identifier.text,
+                type: type.isFunction
+                    ? "@escaping \(type.trimmedDescription)"
+                    : type.trimmedDescription,
+                defaultValue: declaredDefault(of: binding, accessLevel: accessLevel)
+                    ?? DefaultValue.resolve(
+                        for: type,
+                        genericParameterNames: genericParameterNames
+                    )
+            )
         }
     }
 
@@ -82,23 +155,26 @@ enum FakeGenerator {
     /// declares no `init` in its body. One declared there can still stand in
     /// for it when it takes exactly the stored properties as labels, in order,
     /// and can be called as `Self(...)` with nothing more: it is not failable,
-    /// not `throws`, and not `async`. Otherwise the first `init` is returned,
-    /// so the diagnostic can point at it.
+    /// not `throws`, and not `async`. Every configuration in `layout` needs
+    /// such an `init`. Otherwise the first `init` is returned, so the
+    /// diagnostic can point at it.
     static func initializerBlockingMemberwise(
         of structDecl: StructDeclSyntax,
-        storedProperties: [StoredProperty]
+        layout: StoredPropertyLayout
     ) -> InitializerDeclSyntax? {
         let initializers = structDecl.memberBlock.members.compactMap {
             $0.decl.as(InitializerDeclSyntax.self)
         }
-        let labels = storedProperties.map(\.name)
 
-        guard let first = initializers.first,
-            !initializers.contains(where: { $0.standsInForMemberwise(labels: labels) })
-        else {
+        guard let first = initializers.first else {
             return nil
         }
-        return first
+
+        let isCovered = layout.configurations.allSatisfy { properties in
+            let labels = properties.map(\.name)
+            return initializers.contains { $0.standsInForMemberwise(labels: labels) }
+        }
+        return isCovered ? nil : first
     }
 
     /// The case `fake()` returns.
@@ -172,11 +248,43 @@ enum FakeGenerator {
 
     // MARK: - Rendering
 
+    /// The struct `fake()` source, with one method per configuration in
+    /// `layout`, each inside the `#if` clause that selects it.
     static func fakeMethod(
-        for properties: [StoredProperty],
+        for layout: StoredPropertyLayout,
         accessLevel: AccessLevel,
         condition: CompilationCondition
     ) -> String {
+        condition.guarding(render(layout, accessLevel: accessLevel))
+    }
+
+    private static func render(_ layout: StoredPropertyLayout, accessLevel: AccessLevel) -> String {
+        switch layout {
+        case .unconditional(let properties):
+            return fakeMethod(for: properties, accessLevel: accessLevel)
+        case .conditional(let clauses):
+            let branches = clauses.map { clause in
+                let directive = clause.condition.map { "\(clause.keyword) \($0)" } ?? clause.keyword
+                return "\(directive)\n\(render(clause.layout, accessLevel: accessLevel))"
+            }
+            return (branches + ["#endif"]).joined(separator: "\n")
+        }
+    }
+
+    private static func fakeMethod(
+        for properties: [StoredProperty],
+        accessLevel: AccessLevel
+    ) -> String {
+        // A configuration may have no stored properties at all, and then the
+        // memberwise initializer takes no arguments.
+        guard !properties.isEmpty else {
+            return """
+                \(accessLevel.modifier)static func fake() -> Self {
+                    Self()
+                }
+                """
+        }
+
         var parameters: [String] = []
         var assignments: [String] = []
 
@@ -194,8 +302,7 @@ enum FakeGenerator {
         let parametersString = parameters.joined(separator: ",\n")
         let assignmentsString = assignments.joined(separator: ",\n")
 
-        return condition.guarding(
-            """
+        return """
             \(accessLevel.modifier)static func fake(
             \(parametersString)
             ) -> Self {
@@ -204,7 +311,6 @@ enum FakeGenerator {
                 )
             }
             """
-        )
     }
 
     /// The enum `fake()` source, or `nil` when no value can be written for one

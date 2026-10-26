@@ -155,6 +155,19 @@ extension TestExtensionInitialized {
 }
 
 @Fakable
+struct TestConditionalMembers {
+    let name: String
+    #if FAKABLE_RUNTIME_TEST_CONDITION
+    let flagged: Bool
+    #else
+    let unflagged: Int
+    #endif
+    #if NEVER_DEFINED_IN_FAKABLE_TESTS
+    let neverPresent: String
+    #endif
+}
+
+@Fakable
 struct TestComputed {
     let name: String
     var label: String {

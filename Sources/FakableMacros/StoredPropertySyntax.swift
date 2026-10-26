@@ -114,3 +114,13 @@ extension InitializerDeclSyntax {
         return parameterLabels == labels
     }
 }
+
+extension IfConfigClauseSyntax {
+    /// The members the clause holds, or none when it holds something else.
+    var memberItems: [MemberBlockItemSyntax] {
+        guard case .decls(let members) = elements else {
+            return []
+        }
+        return Array(members)
+    }
+}

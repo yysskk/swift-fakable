@@ -236,6 +236,9 @@ expands at compile time and cannot read a value computed at run time.
 - Struct parameters keep the declaration order of the stored properties, and the
   body forwards them to the memberwise initializer by label. One declaration can
   introduce several of them: `let x, y: Int` yields a parameter each.
+- A stored property inside `#if` is a parameter only in the configurations
+  that declare it: each clause gets a `fake()` of its own, and a block without
+  `#else` gains one for the configuration where no clause holds.
 - A stored property that declares its own value (`var page: Int = 1`) still gets
   a parameter, defaulted to that value. A `public fake()` uses the value only
   when it is a literal, and the type's default otherwise.

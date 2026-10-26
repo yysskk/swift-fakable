@@ -25,19 +25,19 @@ public struct FakableMacro: MemberMacro {
         let accessLevel = AccessLevel(of: declaration).memberLevel
 
         if let structDecl = declaration.as(StructDeclSyntax.self) {
-            let storedProperties = FakeGenerator.storedProperties(
+            let layout = FakeGenerator.storedPropertyLayout(
                 of: structDecl,
                 accessLevel: accessLevel
             )
 
-            guard !storedProperties.isEmpty else {
+            guard layout.configurations.contains(where: { !$0.isEmpty }) else {
                 context.diagnose(node, .noStoredProperties)
                 return []
             }
 
             if let initializer = FakeGenerator.initializerBlockingMemberwise(
                 of: structDecl,
-                storedProperties: storedProperties
+                layout: layout
             ) {
                 context.diagnose(
                     Diagnostic(node: initializer, message: FakableDiagnostic.memberwiseInitializerUnavailable)
@@ -46,7 +46,7 @@ public struct FakableMacro: MemberMacro {
             }
 
             let fakeMethod = FakeGenerator.fakeMethod(
-                for: storedProperties,
+                for: layout,
                 accessLevel: accessLevel,
                 condition: condition
             )
