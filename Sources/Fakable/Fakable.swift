@@ -111,8 +111,9 @@ public macro Fakable(
 /// - Note: The value is type-checked on its own, before the property's type is
 ///   known, so it has to have a type of its own: an implicit member such as
 ///   `.member` has to name its type, as in `Role.member`, and a bare `[]` or
-///   `nil` does not compile (those are the defaults already). A `public` `fake()` emits its default arguments into its
-///   callers, so the value may reference only public declarations there.
+///   `nil` does not compile (those are the defaults already). A `public`
+///   `fake()` emits its default arguments into its callers, so the value may
+///   reference only public declarations there.
 /// - Parameter value: The value `fake()` uses when the caller passes none.
 @attached(peer)
 public macro FakeValue<Value>(
