@@ -185,6 +185,18 @@ enum TestConnection: Equatable {
     case disconnected
 }
 
+@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *)
+@Fakable
+struct TestWideIntegers {
+    let signed: Int128
+    let unsigned: UInt128
+}
+
+@Fakable
+struct TestToken: ~Copyable {
+    let value: String
+}
+
 @Fakable
 struct TestComputed {
     let name: String

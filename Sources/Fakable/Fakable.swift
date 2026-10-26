@@ -25,8 +25,9 @@
 /// parameter is defaulted by its type:
 ///
 /// - `String`: `""`
-/// - `Int`, `UInt`, and the sized integer types: `0`
-/// - `Double`, `Float`, `CGFloat`, `TimeInterval`: `0.0`
+/// - `Int`, `UInt`, and the sized integer types, `Int128` and `UInt128`
+///   included: `0`
+/// - `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval`: `0.0`
 /// - `Bool`: `false`
 /// - `Decimal`: `0`
 /// - `Date`: the epoch; `UUID`: the nil UUID; `URL`: `URL(fileURLWithPath: "/")`;
