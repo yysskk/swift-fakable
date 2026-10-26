@@ -75,6 +75,32 @@ enum FakeGenerator {
         return value.trimmedDescription
     }
 
+    /// The `init` that keeps the memberwise initializer from existing, or `nil`
+    /// when `fake()` has an initializer to call.
+    ///
+    /// Swift synthesizes the memberwise initializer only for a struct that
+    /// declares no `init` in its body. One declared there can still stand in
+    /// for it when it takes exactly the stored properties as labels, in order,
+    /// and can be called as `Self(...)` with nothing more: it is not failable,
+    /// not `throws`, and not `async`. Otherwise the first `init` is returned,
+    /// so the diagnostic can point at it.
+    static func initializerBlockingMemberwise(
+        of structDecl: StructDeclSyntax,
+        storedProperties: [StoredProperty]
+    ) -> InitializerDeclSyntax? {
+        let initializers = structDecl.memberBlock.members.compactMap {
+            $0.decl.as(InitializerDeclSyntax.self)
+        }
+        let labels = storedProperties.map(\.name)
+
+        guard let first = initializers.first,
+            !initializers.contains(where: { $0.standsInForMemberwise(labels: labels) })
+        else {
+            return nil
+        }
+        return first
+    }
+
     /// The case `fake()` returns.
     ///
     /// A case without associated values is preferred, wherever it appears, since

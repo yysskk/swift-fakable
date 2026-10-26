@@ -108,10 +108,29 @@ static func fake(
 #endif
 ```
 
-Because it calls `Self(...)`, `fake()` is only usable where the memberwise
-initializer is. If you write a custom `init` in the same file, the memberwise
-initializer disappears and the generated code stops compiling — declare the
-custom `init` in an extension to keep both.
+Because it calls `Self(...)`, `fake()` needs the memberwise initializer, and
+Swift synthesizes that only for a struct that declares no `init` in its body.
+Declare a custom `init` in an extension to keep both:
+
+```swift
+@Fakable
+struct Item {
+    let name: String
+}
+
+extension Item {
+    init(title: String) {
+        self.init(name: title)
+    }
+}
+```
+
+An `init` in the body still works when it takes exactly the stored properties
+as labels, in declaration order, and can be called as `Self(...)` with nothing
+more — not failable, not `throws`, and not `async`. `fake()` then calls it in
+place of the memberwise initializer, so any normalization it does applies to
+fakes too. Any other `init` in the body is an error, reported on that `init`
+(see [Errors](#errors)).
 
 ### A struct with no stored properties
 
@@ -353,6 +372,14 @@ compile-time error, reported on the attribute itself:
 
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
+
+A struct whose body declares an `init` that cannot stand in for the memberwise
+initializer is an error, reported on that `init`, since `fake()` would have
+nothing to call:
+
+```
+'@Fakable' calls the memberwise initializer, which a struct that declares an 'init' in its body does not get; move this 'init' to an extension
+```
 
 Two more cases warn rather than fail, because the declaration is valid and the
 attribute simply had nothing to do:

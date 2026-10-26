@@ -35,6 +35,16 @@ public struct FakableMacro: MemberMacro {
                 return []
             }
 
+            if let initializer = FakeGenerator.initializerBlockingMemberwise(
+                of: structDecl,
+                storedProperties: storedProperties
+            ) {
+                context.diagnose(
+                    Diagnostic(node: initializer, message: FakableDiagnostic.memberwiseInitializerUnavailable)
+                )
+                return []
+            }
+
             let fakeMethod = FakeGenerator.fakeMethod(
                 for: storedProperties,
                 accessLevel: accessLevel,

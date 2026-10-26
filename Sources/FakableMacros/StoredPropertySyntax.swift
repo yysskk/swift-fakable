@@ -98,3 +98,19 @@ extension ExprSyntax {
         return false
     }
 }
+
+extension InitializerDeclSyntax {
+    /// Whether `Self(label: value, ...)` with exactly `labels`, in order,
+    /// calls this initializer the way it would call the memberwise one.
+    func standsInForMemberwise(labels: [String]) -> Bool {
+        guard optionalMark == nil,
+            signature.effectSpecifiers?.throwsClause == nil,
+            signature.effectSpecifiers?.asyncSpecifier == nil
+        else {
+            return false
+        }
+
+        let parameterLabels = signature.parameterClause.parameters.map(\.firstName.text)
+        return parameterLabels == labels
+    }
+}

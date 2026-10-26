@@ -420,4 +420,46 @@ struct StoredPropertyMacroTests {
             macros: testMacros
         )
     }
+
+    @Test("Init that takes the stored properties stands in for the memberwise one")
+    func fakableWithInitializerMatchingMemberwise() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Item {
+                let name: String
+                let count: Int
+
+                init(name: String, count: Int) {
+                    self.name = name
+                    self.count = count
+                }
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    let name: String
+                    let count: Int
+
+                    init(name: String, count: Int) {
+                        self.name = name
+                        self.count = count
+                    }
+
+                    #if DEBUG
+                    static func fake(
+                        name: String = "",
+                        count: Int = 0
+                    ) -> Self {
+                        Self(
+                            name: name,
+                            count: count
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
 }

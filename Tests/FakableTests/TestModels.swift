@@ -133,6 +133,28 @@ struct TestStructural {
 }
 
 @Fakable
+struct TestNormalized {
+    let name: String
+    let count: Int
+
+    init(name: String, count: Int) {
+        self.name = name.lowercased()
+        self.count = max(count, 0)
+    }
+}
+
+@Fakable
+struct TestExtensionInitialized {
+    let name: String
+}
+
+extension TestExtensionInitialized {
+    init(title: String) {
+        self.init(name: title)
+    }
+}
+
+@Fakable
 struct TestComputed {
     let name: String
     var label: String {
