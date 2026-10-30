@@ -101,7 +101,7 @@ wherever that initializer is.
 
 ### Enums
 
-`@Fakable` generates a parameterless `static func fake()` that returns one case:
+`@Fakable` generates a `static func fake()` that returns one case:
 
 ```swift
 @Fakable
@@ -117,6 +117,32 @@ static func fake() -> Self {
 }
 #endif
 ```
+
+When that case carries associated values, they become parameters, each
+defaulted by its type the way a struct's stored properties are:
+
+```swift
+@Fakable
+enum Connection {
+    case connected(host: String, port: Int)
+}
+
+// expands to:
+#if DEBUG
+static func fake(
+    host: String = "",
+    port: Int = 0
+) -> Self {
+    .connected(host: host, port: port)
+}
+#endif
+
+Connection.fake()                      // .connected(host: "", port: 0)
+Connection.fake(host: "example.com")   // .connected(host: "example.com", port: 0)
+```
+
+A value the case declares no label for is passed positionally, so
+`case tapped(String, at: Int)` gives `fake(_ value0: String = "", at: Int = 0)`.
 
 ## Default Values
 
@@ -283,7 +309,8 @@ expands at compile time and cannot read a value computed at run time.
 - Geometry types — `CGPoint`, `CGSize`, `CGRect`, `CGVector` — and `Duration`
 - Nested `@Fakable` types through the `.fake()` fallback, and types you do not
   own through `FakeProvider`
-- Labeled and unlabeled associated values on enum cases
+- Labeled and unlabeled associated values, as the parameters an enum's
+  `fake()` takes
 - Generic structs and enums
 - Per-property defaults with `@FakeValue`, and the enum case with `@FakeCase`
 - Configurable compilation condition (`condition:` — `#if DEBUG` by default, a custom condition, or no guard)
@@ -371,9 +398,12 @@ expands at compile time and cannot read a value computed at run time.
   qualifier is dropped. A type nested in one of your own, such as
   `Models.Date`, keeps the `.fake()` fallback.
 - An enum is an error only when *every* case carries an associated value the
-  macro cannot write, such as a generic parameter or a closure: `fake()` takes
-  no parameters, so there is nowhere to get the value from. A case with no
-  associated values, or one whose values can all be written, is used instead.
+  macro cannot write, such as a generic parameter or a closure. `fake()` could
+  ask for such a value, but then it could not be called with no arguments, and
+  `.fake()` — how a nested model reaches it — passes none. Rather than pick a
+  case arbitrarily and make every call site fill it in, the macro reports it. A
+  case with no associated values, or one whose values can all be written, is
+  used instead.
 - The only argument `@Fakable` accepts is `condition:`, and its value must be
   written literally as `.debug`, `.always`, or `.custom("CONDITION")` with a
   string literal. Anything else is a compile-time error, as is a condition

@@ -49,8 +49,11 @@ struct FakeCaseMacroTests {
                     case loaded(items: [String], page: Int)
 
                     #if DEBUG
-                    static func fake() -> Self {
-                        .loaded(items: [], page: 0)
+                    static func fake(
+                        items: [String] = [],
+                        page: Int = 0
+                    ) -> Self {
+                        .loaded(items: items, page: page)
                     }
                     #endif
                 }

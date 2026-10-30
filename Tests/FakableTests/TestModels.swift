@@ -43,6 +43,17 @@ enum TestSingleCase {
 }
 
 @Fakable
+enum TestMeasurement: Equatable {
+    case point(Int, unit: String)
+    case distance(Double)
+}
+
+@Fakable
+enum TestEvent: Equatable {
+    case tapped(_ title: String, at: Int)
+}
+
+@Fakable
 struct TestContainer {
     let items: [String]
     let metadata: [String: Int]

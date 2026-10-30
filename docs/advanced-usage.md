@@ -214,23 +214,66 @@ enum Connection {
 }
 ```
 
-A marked case's associated values are filled in the same way, and a value the
-macro cannot write — a generic parameter, a closure — is an error on the marker
-rather than a reason to pick another case. Mark at most one case, on a
+A marked case's associated values become parameters the same way, and a value
+the macro cannot write — a generic parameter, a closure — is an error on the
+marker rather than a reason to pick another case. Mark at most one case, on a
 declaration of its own: `@FakeCase case a, b` would not say which is meant, and
 both mistakes are errors. `@FakeCase` in an enum without `@Fakable` warns, and
 so does one on a case inside `#if`, since those cases are not considered.
 
-### Labeled and unlabeled associated values
+### Associated values become parameters
 
-Labels are preserved when present and omitted when not:
+The chosen case's associated values are the parameters `fake()` takes, each
+defaulted by its type, the way a struct's stored properties are. `fake()` with
+no arguments returns what it always did; a test that wants one value different
+names that one:
+
+```swift
+@Fakable
+enum Connection {
+    case connected(host: String, port: Int)
+}
+
+// expands to:
+static func fake(
+    host: String = "",
+    port: Int = 0
+) -> Self {
+    .connected(host: host, port: port)
+}
+
+Connection.fake()                      // .connected(host: "", port: 0)
+Connection.fake(host: "example.com")   // .connected(host: "example.com", port: 0)
+```
+
+A label the case declares is the parameter's argument label. A value declared
+without one is passed positionally, and its parameter takes no label either,
+named after its position inside the method:
 
 ```swift
 @Fakable
 enum Event {
-    case tapped(String, at: Int)   // fake() == .tapped("", at: 0)
+    case tapped(String, at: Int)
 }
+
+// expands to:
+static func fake(
+    _ value0: String = "",
+    at: Int = 0
+) -> Self {
+    .tapped(value0, at: at)
+}
+
+Event.fake("button", at: 3)
 ```
+
+A case that names an unlabeled value itself keeps that name:
+`case tapped(_ title: String)` gives `fake(_ title: String = "")`, since `_` is
+how a case declares a value unlabeled and names it for its own body.
+
+Only the name inside the method comes from the position, so a case free to
+label a value `value0` does not collide with it: the second of the two takes an
+underscore.
 
 ## Default values
 
@@ -531,9 +574,9 @@ compile-time error, reported on the attribute itself:
 Classes, actors, and protocols all hit this. A class has no memberwise
 initializer to forward to, which is the underlying reason.
 
-A class or actor can still take part in a `@Fakable` model: write its `fake()`
-by hand, and every property of that type picks it up through the `.fake()`
-fallback.
+A class or actor can still take part in a `@Fakable` model: conform it to
+`FakeProvider`, and every property of that type picks its `fake()` up through
+the `.fake()` fallback.
 
 ```swift
 final class Session {
@@ -541,13 +584,11 @@ final class Session {
     init(token: String) { self.token = token }
 }
 
-#if DEBUG
-extension Session {
-    static func fake(token: String = "") -> Session {
-        Session(token: token)
+extension Session: FakeProvider {
+    static func fake() -> Self {
+        Self(token: "")
     }
 }
-#endif
 
 @Fakable
 struct Request {

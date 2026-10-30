@@ -178,8 +178,10 @@ struct GenericMacroTests {
                     case count(Int)
 
                     #if DEBUG
-                    static func fake() -> Self {
-                        .count(0)
+                    static func fake(
+                        _ value0: Int = 0
+                    ) -> Self {
+                        .count(value0)
                     }
                     #endif
                 }
