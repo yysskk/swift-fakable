@@ -195,6 +195,59 @@ struct EnumMacroTests {
         )
     }
 
+    @Test("A value named after a _ takes that name, with no label")
+    func fakableWithNamedUnlabeledAssociatedValue() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Event {
+                case tapped(_ title: String, at: Int)
+            }
+            """,
+            expandedSource: """
+                enum Event {
+                    case tapped(_ title: String, at: Int)
+
+                    #if DEBUG
+                    static func fake(
+                        _ title: String = "",
+                        at: Int = 0
+                    ) -> Self {
+                        .tapped(title, at: at)
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("A label that is a keyword keeps its backticks")
+    func fakableWithKeywordAssociatedValueLabel() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            enum Command {
+                case run(`default`: Int)
+            }
+            """,
+            expandedSource: """
+                enum Command {
+                    case run(`default`: Int)
+
+                    #if DEBUG
+                    static func fake(
+                        `default`: Int = 0
+                    ) -> Self {
+                        .run(`default`: `default`)
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
     @Test("A label that collides with a positional name keeps both parameters")
     func fakableWithCollidingAssociatedValueLabel() {
         assertMacroExpansionForTesting(

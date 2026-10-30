@@ -267,6 +267,10 @@ static func fake(
 Event.fake("button", at: 3)
 ```
 
+A case that names an unlabeled value itself keeps that name:
+`case tapped(_ title: String)` gives `fake(_ title: String = "")`, since `_` is
+how a case declares a value unlabeled and names it for its own body.
+
 Only the name inside the method comes from the position, so a case free to
 label a value `value0` does not collide with it: the second of the two takes an
 underscore.

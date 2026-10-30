@@ -105,7 +105,9 @@ Connection.fake(host: "example.com")   // .connected(host: "example.com", port: 
 
 A label the case declares is the parameter's argument label; a value declared
 without one is positional, so `case tapped(String, at: Int)` gives
-`fake(_ value0: String = "", at: Int = 0)`.
+`fake(_ value0: String = "", at: Int = 0)`. A case that names such a value
+itself keeps that name: `case tapped(_ title: String)` gives
+`fake(_ title: String = "")`.
 
 ## Default values
 

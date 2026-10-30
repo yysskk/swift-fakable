@@ -85,6 +85,12 @@ struct EnumTests {
         #expect(TestMeasurement.fake(7, unit: "cm") == .point(7, unit: "cm"))
     }
 
+    @Test("A value named after a _ is still passed positionally")
+    func testNamedUnlabeledAssociatedValue() {
+        #expect(TestEvent.fake() == .tapped("", at: 0))
+        #expect(TestEvent.fake("button", at: 3) == .tapped("button", at: 3))
+    }
+
     @Test("The marked case's associated values are overridable too")
     func testOverridingAMarkedCaseValue() {
         #expect(TestConnection.fake(host: "example.com") == .connected(host: "example.com", port: 0))

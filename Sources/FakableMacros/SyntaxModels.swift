@@ -57,6 +57,13 @@ struct AssociatedValue {
     /// so a value without one is passed positionally.
     let label: String?
 
+    /// The name the case gives the value after a `_`, as in
+    /// `case tapped(_ title: String)`, or `nil` when it gives none.
+    ///
+    /// The value is unlabeled either way. This only names the parameter inside
+    /// `fake()`, in place of one made up from its position.
+    let declaredName: String?
+
     /// The parameter type, as the case declares it.
     let type: String
 

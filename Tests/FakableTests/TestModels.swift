@@ -49,6 +49,11 @@ enum TestMeasurement: Equatable {
 }
 
 @Fakable
+enum TestEvent: Equatable {
+    case tapped(_ title: String, at: Int)
+}
+
+@Fakable
 struct TestContainer {
     let items: [String]
     let metadata: [String: Int]

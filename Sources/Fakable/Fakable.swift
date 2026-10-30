@@ -62,7 +62,8 @@
 /// defaulted from the table above, so `fake()` with no arguments returns the
 /// same value either way and a test can name just the one it cares about. A
 /// value the case declares no label for is passed positionally, and its
-/// parameter takes no label either:
+/// parameter takes no label either, named after the name the case gives it or
+/// else after its position:
 ///
 /// ```swift
 /// @Fakable

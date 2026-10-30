@@ -288,8 +288,14 @@ enum FakeGenerator {
         genericParameterNames: Set<String>
     ) -> [AssociatedValue] {
         parameterClause.parameters.map { parameter in
-            AssociatedValue(
-                label: parameter.firstName?.text,
+            // `case tapped(_ title: String)` declares the value unlabeled and
+            // names it for the case's own body, so the first name is the `_`
+            // and the name the macro can use follows it.
+            let isUnlabeled = parameter.firstName?.tokenKind == .wildcard
+
+            return AssociatedValue(
+                label: isUnlabeled ? nil : parameter.firstName?.text,
+                declaredName: isUnlabeled ? parameter.secondName?.text : nil,
                 type: parameter.type.trimmedDescription,
                 value: parameter.type.fakeDefaultValue(genericParameterNames: genericParameterNames)
             )
@@ -424,17 +430,21 @@ enum FakeGenerator {
     /// The parameter name each associated value is referred to by inside
     /// `fake()`, in order.
     ///
-    /// A labeled value is named after its label, and one without a label after
-    /// its position, since there is nothing else to call it. Both are then made
-    /// unique: a name a previous value already took gains an underscore, so a
-    /// case can label a value `value0` without colliding with the name an
-    /// unlabeled one is given. Only the name inside the method changes; the
-    /// labels the caller writes are the ones the case declares.
+    /// A labeled value is named after its label, an unlabeled one after the
+    /// name the case gives it, and a value with neither after its position,
+    /// since there is nothing else to call it. The names are then made unique:
+    /// one a previous value already took gains an underscore, so a case can
+    /// label a value `value0` without colliding with the name an unlabeled one
+    /// is given. Only the name inside the method changes; the labels the caller
+    /// writes are the ones the case declares.
     private static func parameterNames(for associatedValues: [AssociatedValue]) -> [String] {
         var taken: Set<String> = []
 
         return associatedValues.enumerated().map { index, associatedValue in
-            var name = associatedValue.label ?? "value\(index)"
+            var name =
+                associatedValue.label
+                ?? associatedValue.declaredName
+                ?? "value\(index)"
             while !taken.insert(name).inserted {
                 name += "_"
             }
