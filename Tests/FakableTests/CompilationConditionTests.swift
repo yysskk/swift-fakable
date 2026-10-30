@@ -12,4 +12,9 @@ struct CompilationConditionTests {
     func testCustomCondition() {
         #expect(TestConditionallyFaked.fake(id: "a").id == "a")
     }
+
+    @Test("A string literal guards fake() behind the same flag")
+    func testStringLiteralCondition() {
+        #expect(TestLiterallyFaked.fake(id: "a").id == "a")
+    }
 }

@@ -37,7 +37,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Nested `@Fakable` models through the `.fake()` fallback, and types you do not own through `FakeProvider`
 - Generic structs (generic-typed properties become required parameters) and generic enums
 - Per-property defaults with `@FakeValue(value)`, ahead of a declared value and the type's default (the value needs a type of its own: `Role.member`, not `.member`)
-- Configurable compilation condition (`@Fakable(condition:)` — `.debug` default, `.custom("FAKING")` / `.custom("DEBUG || UITESTS")`, or `.always`)
+- Configurable compilation condition (`@Fakable(condition:)` — `.debug` default, `.custom("FAKING")` / `.custom("DEBUG || UITESTS")`, or `.always`); a bare string literal is `.custom` of that literal, so `condition: "FAKING"` says the same thing
 
 ## Limitations
 
@@ -46,7 +46,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - `fake()` calls the memberwise initializer, so an `init` declared in the struct's body is an error unless it takes exactly the stored properties as labels, in order (declare a custom `init` in an extension)
 - Only structs and enums; anything else is a compile-time error
 - A generic enum is an error only when every case carries an associated value it cannot write (a generic parameter, a closure, a tuple): `fake()` could ask for it, but then it could not be called with no arguments, which is what `.fake()` does; a case with no associated values or with non-generic ones is used instead
-- `condition:` is the only argument, and must be written literally as `.debug`, `.always`, or `.custom("CONDITION")`; a condition `#if` would reject is a compile-time error
+- `condition:` is the only argument, and must be written literally as `.debug`, `.always`, `.custom("CONDITION")`, or `"CONDITION"`; a condition `#if` would reject is a compile-time error, and so is an interpolated literal
 
 ## Requirements
 

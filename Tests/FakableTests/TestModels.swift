@@ -261,6 +261,11 @@ struct TestConditionallyFaked {
     let id: String
 }
 
+@Fakable(condition: "FAKABLE_RUNTIME_TEST_CONDITION")
+struct TestLiterallyFaked {
+    let id: String
+}
+
 @Fakable
 struct TestSearchKeyword: Codable, Equatable, Sendable {
     let keyword: String
