@@ -112,7 +112,7 @@ struct EnumFakeBuilder {
             return AssociatedValue(
                 label: isUnlabeled ? nil : parameter.firstName?.text,
                 declaredName: isUnlabeled ? parameter.secondName?.text : nil,
-                type: parameter.type.trimmedDescription,
+                type: parameter.type,
                 value: parameter.type.fakeDefaultValue(
                     genericParameterNames: genericParameterNames
                 )
@@ -160,9 +160,11 @@ struct EnumFakeBuilder {
                 case name: name
                 case let label?: "\(label) \(name)"
                 }
-            let defaultValue = associatedValue.value.map { " = \($0)" } ?? ""
+            let defaultValue = associatedValue.value.map { " = \($0.trimmedDescription)" } ?? ""
 
-            parameters.append("    \(declaration): \(associatedValue.type)\(defaultValue)")
+            parameters.append(
+                "    \(declaration): \(associatedValue.type.trimmedDescription)\(defaultValue)"
+            )
             arguments.append(associatedValue.label.map { "\($0): \(name)" } ?? name)
         }
 

@@ -1,16 +1,38 @@
 import SwiftSyntax
 
 /// A stored property of a struct that `fake()` needs a parameter for.
-struct StoredProperty: Equatable {
+struct StoredProperty {
     let name: String
 
-    /// The parameter type, as the property declares it, marked `@escaping`
-    /// when it is a function type.
-    let type: String
+    /// The parameter type, as the property declares it.
+    let type: TypeSyntax
+
+    /// Whether the parameter needs `@escaping`.
+    ///
+    /// A parameter of function type does not escape unless it says so, and
+    /// `fake()` stores every parameter it takes. Kept apart from ``type``, so
+    /// the model says what is true of the property and the rendering decides
+    /// how to write it.
+    let isEscaping: Bool
 
     /// The value the parameter defaults to, or `nil` when the parameter has to
     /// be required because no value can be written for its type.
-    let defaultValue: String?
+    let defaultValue: ExprSyntax?
+}
+
+extension StoredProperty: Equatable {
+    /// Compared by what the parameter is written as.
+    ///
+    /// Two `#if` clauses that end up with the same properties collapse into one
+    /// method, and "the same" there is a question about the source they render
+    /// to. A syntax node compares by identity, so the same type written in two
+    /// clauses would otherwise count as two different ones.
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.name == rhs.name
+            && lhs.isEscaping == rhs.isEscaping
+            && lhs.type.trimmedDescription == rhs.type.trimmedDescription
+            && lhs.defaultValue?.trimmedDescription == rhs.defaultValue?.trimmedDescription
+    }
 }
 
 /// The stored properties of a struct, across the build configurations its
@@ -86,9 +108,9 @@ struct AssociatedValue {
     let declaredName: String?
 
     /// The parameter type, as the case declares it.
-    let type: String
+    let type: TypeSyntax
 
     /// The value the parameter defaults to, or `nil` when none can be written
     /// for its type.
-    let value: String?
+    let value: ExprSyntax?
 }

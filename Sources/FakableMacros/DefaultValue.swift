@@ -1,4 +1,5 @@
 import SwiftSyntax
+import SwiftSyntaxBuilder
 
 /// The modules whose types the default table knows by name.
 ///
@@ -33,7 +34,17 @@ extension TypeSyntax {
     /// - Parameter genericParameterNames: The names the enclosing declaration
     ///   introduces. A type built from one of these has no value the macro
     ///   could write, so it resolves to `nil` rather than to `.fake()`.
-    func fakeDefaultValue(genericParameterNames: Set<String>) -> String? {
+    func fakeDefaultValue(genericParameterNames: Set<String>) -> ExprSyntax? {
+        fakeDefaultValueSource(genericParameterNames: genericParameterNames)
+            .map { ExprSyntax(stringLiteral: $0) }
+    }
+
+    /// The source the default is written as, which ``fakeDefaultValue(genericParameterNames:)``
+    /// parses.
+    ///
+    /// The table is a table of source snippets, so it reads as one; parsing
+    /// happens once, at its edge.
+    private func fakeDefaultValueSource(genericParameterNames: Set<String>) -> String? {
         // Ahead of the type name, so an optional of any type is nil.
         if isOptional {
             return "nil"
