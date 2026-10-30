@@ -1,4 +1,4 @@
-/// A macro that generates a `fake()` factory method for a struct or an enum (DEBUG only).
+/// Generates a `fake()` factory method for a struct or an enum.
 ///
 /// Attach `@Fakable` to a model and call `fake()` in tests to build an instance
 /// without spelling out every property. Each parameter has a default, so a test

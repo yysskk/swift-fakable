@@ -5,8 +5,9 @@ public import SwiftSyntaxMacros
 
 /// The implementation of the `@Fakable` macro.
 ///
-/// It adds a `static func fake(...)` member, wrapped in `#if DEBUG`, to the
-/// struct or enum it is attached to.
+/// It adds a `static func fake(...)` member to the struct or enum it is
+/// attached to, guarded by the `condition:` argument's compilation condition —
+/// `#if DEBUG` unless the attachment site says otherwise.
 public struct FakableMacro: MemberMacro {
     public static func expansion(
         of node: AttributeSyntax,
