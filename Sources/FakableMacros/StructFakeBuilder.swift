@@ -102,13 +102,14 @@ struct StructFakeBuilder {
         var assignments: [String] = []
 
         for property in properties {
+            let escaping = property.isEscaping ? "@escaping " : ""
             // A property with no value the macro can write becomes a required
             // parameter rather than a defaulted one.
-            if let defaultValue = property.defaultValue {
-                parameters.append("    \(property.name): \(property.type) = \(defaultValue)")
-            } else {
-                parameters.append("    \(property.name): \(property.type)")
-            }
+            let defaultValue = property.defaultValue.map { " = \($0.trimmedDescription)" } ?? ""
+
+            parameters.append(
+                "    \(property.name): \(escaping)\(property.type.trimmedDescription)\(defaultValue)"
+            )
             assignments.append("        \(property.name): \(property.name)")
         }
 
@@ -223,10 +224,9 @@ private struct StoredPropertyReader {
 
             return StoredProperty(
                 name: identifier.identifier.text,
-                type: type.isFunction
-                    ? "@escaping \(type.trimmedDescription)"
-                    : type.trimmedDescription,
-                defaultValue: variable.fakeValue?.trimmedDescription
+                type: type,
+                isEscaping: type.isFunction,
+                defaultValue: variable.fakeValue
                     ?? declaredDefault(of: binding)
                     ?? type.fakeDefaultValue(genericParameterNames: genericParameterNames)
             )
@@ -241,12 +241,12 @@ private struct StoredPropertyReader {
     /// whether `var page: Int = firstPage` names one, so a `public fake()` uses
     /// a declared value only when it is a literal, and falls back to the type's
     /// default otherwise. Every other access level takes the value as written.
-    private func declaredDefault(of binding: PatternBindingSyntax) -> String? {
+    private func declaredDefault(of binding: PatternBindingSyntax) -> ExprSyntax? {
         guard let value = binding.initializer?.value,
             accessLevel != .public || value.isLiteral
         else {
             return nil
         }
-        return value.trimmedDescription
+        return value
     }
 }
