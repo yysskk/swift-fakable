@@ -323,3 +323,35 @@ struct TestPlace {
     let coordinate: TestCoordinate
     let pool: TestConnectionPool
 }
+
+@Fakable
+struct TestLabel {
+    let title: String
+    let tail: Substring
+    let initial: Character
+}
+
+@Fakable
+struct TestBuffer {
+    let page: ArraySlice<String>
+    let storage: ContiguousArray<Int>
+}
+
+#if canImport(CoreGraphics)
+    // Declared without importing CoreGraphics on purpose: Foundation is what
+    // names the geometry types, and the generated defaults have to make do with
+    // that import alone.
+    @Fakable
+    struct TestLayout {
+        let origin: CGPoint
+        let size: CGSize
+        let frame: CGRect
+        let offset: CGVector
+    }
+#endif
+
+@available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)
+@Fakable
+struct TestTiming {
+    let animation: Duration
+}

@@ -122,7 +122,8 @@ static func fake() -> Self {
 
 | Type | Default |
 | --- | --- |
-| `String` | `""` |
+| `String`, `Substring` | `""` |
+| `Character` | `" "` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` | `0` |
 | `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` | `0.0` |
@@ -132,7 +133,9 @@ static func fake() -> Self {
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
-| `Array` (`[T]` or `Array<T>`) | `[]` |
+| `Duration` | `.zero` |
+| `CGPoint`, `CGSize`, `CGRect`, `CGVector` | the zero value, as `CGPoint()` and so on |
+| `Array` (`[T]` or `Array<T>`), `ArraySlice`, `ContiguousArray` | `[]` |
 | `Dictionary` (`[K: V]` or `Dictionary<K, V>`) | `[:]` |
 | `Set` (`Set<T>`) | `[]` |
 | `Optional` (`T?`, `T!`, or `Optional<T>`) | `nil` |
@@ -274,8 +277,10 @@ expands at compile time and cannot read a value computed at run time.
 - Enums with or without associated values
 - Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
-- Arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
+- Arrays, array slices, contiguous arrays, dictionaries, and sets, in bracket
+  sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
+- Geometry types — `CGPoint`, `CGSize`, `CGRect`, `CGVector` — and `Duration`
 - Nested `@Fakable` types through the `.fake()` fallback, and types you do not
   own through `FakeProvider`
 - Labeled and unlabeled associated values on enum cases

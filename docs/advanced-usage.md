@@ -236,7 +236,8 @@ enum Event {
 
 | Type as written | Default |
 | --- | --- |
-| `String` | `""` |
+| `String`, `Substring` | `""` |
+| `Character` | `" "` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` | `0` |
 | `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` | `0.0` |
@@ -246,9 +247,11 @@ enum Event {
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
+| `Duration` | `.zero` |
+| `CGPoint`, `CGSize`, `CGRect`, `CGVector` | the zero value, as `CGPoint()` and so on |
 | `T?`, `T!`, or `Optional<T>` | `nil` |
 | `[K: V]` or `Dictionary<K, V>` | `[:]` |
-| `[T]` or `Array<T>` | `[]` |
+| `[T]`, `Array<T>`, `ArraySlice<T>`, or `ContiguousArray<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
@@ -256,7 +259,7 @@ enum Event {
 
 The same table is used for struct properties and for enum associated values.
 
-Seven details are worth spelling out:
+Eight details are worth spelling out:
 
 - **Optional wins first.** `String?` is `nil`, not `""`. This is checked before
   the type name, so an optional of any type defaults to `nil`.
@@ -270,6 +273,10 @@ Seven details are worth spelling out:
   takes, and `Foundation.Date` the one `Date` takes. Only `Swift`, `Foundation`,
   and `CoreGraphics` count as qualifiers, so a type nested inside one of your
   own, such as `Models.Date`, keeps the `.fake()` fallback.
+- **A geometry type gets its zero value from an initializer.** `CGPoint()`
+  rather than `.zero`, because Foundation is what names `CGPoint`, `CGSize`,
+  `CGRect`, and `CGVector`, while `.zero` is declared in CoreGraphics — an
+  import the property's own type does not require.
 - **A Foundation value type gets a deterministic value.** `Date` is the epoch
   rather than `Date()`, and `UUID` is the nil UUID rather than a fresh one, so
   two fakes of the same model are equal where the model is `Equatable`. Pass the

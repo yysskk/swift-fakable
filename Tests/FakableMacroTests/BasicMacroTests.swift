@@ -176,6 +176,38 @@ struct BasicMacroTests {
         )
     }
 
+    @Test("Every collection an array literal builds uses []")
+    func fakableWithArrayLiteralCollections() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Buffer {
+                let page: ArraySlice<String>
+                let storage: ContiguousArray<Int>
+            }
+            """,
+            expandedSource: """
+                struct Buffer {
+                    let page: ArraySlice<String>
+                    let storage: ContiguousArray<Int>
+
+                    #if DEBUG
+                    static func fake(
+                        page: ArraySlice<String> = [],
+                        storage: ContiguousArray<Int> = []
+                    ) -> Self {
+                        Self(
+                            page: page,
+                            storage: storage
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
     @Test("Module-qualified spelling resolves like its bare name")
     func fakableWithModuleQualifiedSpelling() {
         assertMacroExpansionForTesting(
@@ -287,6 +319,114 @@ struct BasicMacroTests {
                             payload: payload,
                             amount: amount,
                             duration: duration
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Text types use their empty values")
+    func fakableWithTextTypes() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Label {
+                let title: String
+                let tail: Substring
+                let initial: Character
+            }
+            """,
+            expandedSource: """
+                struct Label {
+                    let title: String
+                    let tail: Substring
+                    let initial: Character
+
+                    #if DEBUG
+                    static func fake(
+                        title: String = "",
+                        tail: Substring = "",
+                        initial: Character = " "
+                    ) -> Self {
+                        Self(
+                            title: title,
+                            tail: tail,
+                            initial: initial
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Geometry types and Duration use their zero values")
+    func fakableWithGeometryAndDuration() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Layout {
+                let origin: CGPoint
+                let size: CGSize
+                let frame: CGRect
+                let offset: CGVector
+                let animation: Duration
+            }
+            """,
+            expandedSource: """
+                struct Layout {
+                    let origin: CGPoint
+                    let size: CGSize
+                    let frame: CGRect
+                    let offset: CGVector
+                    let animation: Duration
+
+                    #if DEBUG
+                    static func fake(
+                        origin: CGPoint = CGPoint(),
+                        size: CGSize = CGSize(),
+                        frame: CGRect = CGRect(),
+                        offset: CGVector = CGVector(),
+                        animation: Duration = .zero
+                    ) -> Self {
+                        Self(
+                            origin: origin,
+                            size: size,
+                            frame: frame,
+                            offset: offset,
+                            animation: animation
+                        )
+                    }
+                    #endif
+                }
+                """,
+            macros: testMacros
+        )
+    }
+
+    @Test("Module-qualified geometry types keep the bare name in the default")
+    func fakableWithQualifiedGeometryTypes() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable
+            struct Frame {
+                let origin: CoreGraphics.CGPoint
+            }
+            """,
+            expandedSource: """
+                struct Frame {
+                    let origin: CoreGraphics.CGPoint
+
+                    #if DEBUG
+                    static func fake(
+                        origin: CoreGraphics.CGPoint = CGPoint()
+                    ) -> Self {
+                        Self(
+                            origin: origin
                         )
                     }
                     #endif

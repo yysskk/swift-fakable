@@ -121,7 +121,8 @@ static func fake() -> Self {
 
 | Type | Default |
 | --- | --- |
-| `String` | `""` |
+| `String`, `Substring` | `""` |
+| `Character` | `" "` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` | `0` |
 | `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` | `0.0` |
@@ -131,7 +132,9 @@ static func fake() -> Self {
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
-| `Array` (`[T]` or `Array<T>`) | `[]` |
+| `Duration` | `.zero` |
+| `CGPoint`, `CGSize`, `CGRect`, `CGVector` | the zero value, as `CGPoint()` and so on |
+| `Array` (`[T]` or `Array<T>`), `ArraySlice`, `ContiguousArray` | `[]` |
 | `Dictionary` (`[K: V]` or `Dictionary<K, V>`) | `[:]` |
 | `Set` (`Set<T>`) | `[]` |
 | `Optional` (`T?`, `T!`, or `Optional<T>`) | `nil` |
@@ -179,6 +182,33 @@ struct User {
 
 let user = User.fake(address: .fake(city: "Tokyo"))
 ```
+
+For a type you cannot attach the macro to — one from another module, a class, or
+an actor — conform it to `FakeProvider` instead. The protocol is the `.fake()`
+contract written down: one `static func fake() -> Self`, checked by the compiler
+and usable from generic code.
+
+```swift
+import CoreLocation
+import Fakable
+
+extension CLLocationCoordinate2D: FakeProvider {
+    public static func fake() -> Self {
+        Self(latitude: 0, longitude: 0)
+    }
+}
+
+@Fakable
+struct Place {
+    let name: String
+    let coordinate: CLLocationCoordinate2D   // defaults to .fake()
+}
+```
+
+Return a value that does not change between two calls, the way the defaults
+above do. A `@Fakable` type does not conform on its own, and nothing needs it
+to: its `fake()` is guarded by a compilation condition while a conformance holds
+in every configuration.
 
 The same table applies to an enum case's associated values.
 
@@ -246,9 +276,12 @@ expands at compile time and cannot read a value computed at run time.
 - Enums with or without associated values
 - Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
-- Arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
+- Arrays, array slices, contiguous arrays, dictionaries, and sets, in bracket
+  sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
-- Nested `@Fakable` types through the `.fake()` fallback
+- Geometry types — `CGPoint`, `CGSize`, `CGRect`, `CGVector` — and `Duration`
+- Nested `@Fakable` types through the `.fake()` fallback, and types you do not
+  own through `FakeProvider`
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
 - Per-property defaults with `@FakeValue`, and the enum case with `@FakeCase`
@@ -308,8 +341,8 @@ expands at compile time and cannot read a value computed at run time.
 
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
   actor, or protocol is a compile-time error reported on the attribute itself. A
-  class or actor can still appear in a `@Fakable` model: give it a hand-written
-  `static func fake()` and its properties pick that up through `.fake()`.
+  class or actor can still appear in a `@Fakable` model: conform it to
+  `FakeProvider` and its properties pick that up through `.fake()`.
 - `fake()` takes exactly the parameters the memberwise initializer takes, since
   that is what its body calls. Type-level (`static`) properties, computed
   properties, and constants that already have a value are left out for that
@@ -325,7 +358,8 @@ expands at compile time and cannot read a value computed at run time.
   the property to include it.
 - The `.fake()` fallback is emitted for any other type written as a name. If
   that type has no `fake()`, the error surfaces at compile time in the generated
-  code; add `@Fakable` to it, or pass an explicit value at the call site. A
+  code; add `@Fakable` to it, conform it to `FakeProvider`, or pass an explicit
+  value at the call site. A
   closure, tuple, `any P`, `P & Q`, or metatype has no `fake()` to call, so its
   parameter is required instead, and a closure parameter is marked `@escaping`.
 - Types are matched by their written spelling, so a type alias for `String`
@@ -357,8 +391,8 @@ expands at compile time and cannot read a value computed at run time.
   first time you build a target that uses `@Fakable` (see the note in
   [Installation](#installation)).
 - **`value of type 'X' has no member 'fake'`.** A property of type `X` fell
-  through to the `.fake()` default. Add `@Fakable` to `X`, or pass a value for
-  that parameter explicitly.
+  through to the `.fake()` default. Add `@Fakable` to `X`, conform `X` to
+  `FakeProvider` when you cannot, or pass a value for that parameter explicitly.
 - **A property is missing from `fake()`.** It most likely has no explicit type
   annotation, or it is computed. See [Diagnostics and Limitations](#diagnostics-and-limitations).
 
@@ -616,7 +650,8 @@ enum Event {
 
 | Type as written | Default |
 | --- | --- |
-| `String` | `""` |
+| `String`, `Substring` | `""` |
+| `Character` | `" "` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` | `0` |
 | `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` | `0.0` |
@@ -626,9 +661,11 @@ enum Event {
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
+| `Duration` | `.zero` |
+| `CGPoint`, `CGSize`, `CGRect`, `CGVector` | the zero value, as `CGPoint()` and so on |
 | `T?`, `T!`, or `Optional<T>` | `nil` |
 | `[K: V]` or `Dictionary<K, V>` | `[:]` |
-| `[T]` or `Array<T>` | `[]` |
+| `[T]`, `Array<T>`, `ArraySlice<T>`, or `ContiguousArray<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
@@ -636,7 +673,7 @@ enum Event {
 
 The same table is used for struct properties and for enum associated values.
 
-Seven details are worth spelling out:
+Eight details are worth spelling out:
 
 - **Optional wins first.** `String?` is `nil`, not `""`. This is checked before
   the type name, so an optional of any type defaults to `nil`.
@@ -650,6 +687,10 @@ Seven details are worth spelling out:
   takes, and `Foundation.Date` the one `Date` takes. Only `Swift`, `Foundation`,
   and `CoreGraphics` count as qualifiers, so a type nested inside one of your
   own, such as `Models.Date`, keeps the `.fake()` fallback.
+- **A geometry type gets its zero value from an initializer.** `CGPoint()`
+  rather than `.zero`, because Foundation is what names `CGPoint`, `CGSize`,
+  `CGRect`, and `CGVector`, while `.zero` is declared in CoreGraphics — an
+  import the property's own type does not require.
 - **A Foundation value type gets a deterministic value.** `Date` is the epoch
   rather than `Date()`, and `UUID` is the nil UUID rather than a fresh one, so
   two fakes of the same model are equal where the model is `Equatable`. Pass the
@@ -667,6 +708,52 @@ Seven details are worth spelling out:
   write for it, so the parameter is required instead (see
   [Generic types](#generic-types)). The check is made token by token, so a type
   named `Total` is not mistaken for a generic parameter named `T`.
+
+### Teaching `.fake()` about a type you do not own
+
+The `.fake()` fallback is what makes nested models compose, and it only needs a
+`static func fake() -> Self` to be in scope: the macro reads syntax and never
+resolves types, so it writes the call and leaves the rest to the compiler. For
+the structs and enums you own, `@Fakable` writes that method. For a type you
+cannot attach the macro to — one from another module, a class, or an actor —
+conform it to `FakeProvider`:
+
+```swift
+import CoreLocation
+import Fakable
+
+extension CLLocationCoordinate2D: FakeProvider {
+    public static func fake() -> Self {
+        Self(latitude: 0, longitude: 0)
+    }
+}
+
+@Fakable
+struct Place {
+    let name: String
+    let coordinate: CLLocationCoordinate2D   // defaults to .fake()
+}
+```
+
+The protocol is the contract written down. Conforming is not what makes
+`.fake()` resolve — a plain `extension` declaring the same method works just as
+well — but it names the contract, has the compiler check that the method has the
+shape `fake()` expects, and lets generic code build a value of a type it does
+not know:
+
+```swift
+func fakes<Element: FakeProvider>(_ count: Int) -> [Element] {
+    (0..<count).map { _ in Element.fake() }
+}
+```
+
+Return a value that does not change between two calls, the way the macro's own
+defaults do, so two fakes of the same type stay equal.
+
+A `@Fakable` struct or enum does not conform on its own, and nothing needs it
+to: its `fake()` is guarded by a compilation condition while a conformance holds
+in every configuration, and a struct's `fake()` takes one defaulted parameter
+per stored property, which does not satisfy a requirement written `fake()`.
 
 ## Overriding a default with `@FakeValue`
 
