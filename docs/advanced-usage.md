@@ -558,9 +558,18 @@ condition names in every target that needs the fixture:
 `SWIFT_ACTIVE_COMPILATION_CONDITIONS` in Xcode, or `.define("FLAG")` under
 `swiftSettings` in a package manifest.
 
+`FakeCompilationCondition` is `ExpressibleByStringLiteral`, so a custom
+condition can be written as the literal itself:
+
+```swift
+@Fakable(condition: "FAKING")              // the same as .custom("FAKING")
+@Fakable(condition: "DEBUG || UITESTS")
+```
+
 The value has to be written literally at the attachment site. The macro expands
 at compile time, so a `let condition = ...` defined elsewhere is not something
-it can read, and passing one is an error.
+it can read, and passing one is an error — as is an interpolated literal, for
+the same reason.
 
 ## Errors
 
@@ -637,6 +646,6 @@ The `condition:` argument has two errors of its own, for a value that is not
 written literally and for a condition `#if` would reject:
 
 ```
-'@Fakable' needs 'condition:' written literally as '.debug', '.always', or '.custom("FLAG")'
+'@Fakable' needs 'condition:' written literally as '.debug', '.always', '.custom("FLAG")', or "FLAG"
 "not a condition!" is not a compilation condition '#if' accepts
 ```

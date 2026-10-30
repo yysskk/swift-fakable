@@ -74,7 +74,7 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
         case .unreadableCondition:
             """
             '@Fakable' needs 'condition:' written literally as '.debug', \
-            '.always', or '.custom("FLAG")'
+            '.always', '.custom("FLAG")', or "FLAG"
             """
         case .invalidCondition(let condition):
             // Spelled as a literal, so a condition containing a newline is

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A `condition:` written as a bare string literal is the `.custom` condition it
+  spells, so `@Fakable(condition: "FAKING")` says what
+  `@Fakable(condition: .custom("FAKING"))` says.
+  `FakeCompilationCondition` conforms to `ExpressibleByStringLiteral` for it.
+  The literal still has to be a plain one the macro can read from the source
+  text, so an interpolated literal is an error.
 - More of the standard value types have a default, so they no longer fall
   through to `.fake()` and fail to compile: `Substring` takes `""` and
   `Character` a single space, `Duration` takes `.zero`, `ArraySlice` and

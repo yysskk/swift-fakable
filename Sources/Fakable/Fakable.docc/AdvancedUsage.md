@@ -251,10 +251,12 @@ code.
 ```swift
 @Fakable                                  // #if DEBUG (default)
 @Fakable(condition: .custom("FAKING"))    // #if FAKING
+@Fakable(condition: "FAKING")             // the same, written as the flag
 @Fakable(condition: .always)              // no #if guard
 ```
 
-`.custom` takes anything `#if` accepts, as a string literal. It is validated by
+`.custom` takes anything `#if` accepts, as a string literal, and a bare literal
+is `.custom` of that literal. It is validated by
 parsing `#if <condition>`, so a condition the compiler would reject is a
 compile-time error rather than an `#if` that fails later. The value has to be
 written literally at the attachment site, since the macro expands at compile

@@ -22,3 +22,17 @@ public enum FakeCompilationCondition: Sendable {
     /// `.define("FLAG")` under `swiftSettings` in a package manifest.
     case custom(String)
 }
+
+extension FakeCompilationCondition: ExpressibleByStringLiteral {
+    /// A ``custom(_:)`` condition, so a flag can be written as the literal
+    /// itself: `@Fakable(condition: "FAKING")`.
+    ///
+    /// The literal has to be a plain one, the same way ``custom(_:)``'s
+    /// argument does. The macro reads it from the source text, so an
+    /// interpolation or a value computed elsewhere is an error.
+    ///
+    /// - Parameter value: The condition, as ``custom(_:)`` describes it.
+    public init(stringLiteral value: String) {
+        self = .custom(value)
+    }
+}

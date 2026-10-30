@@ -88,6 +88,9 @@
 /// @Fakable(condition: .custom("FAKING"))
 /// struct Order { ... }        // fake() wrapped in #if FAKING
 ///
+/// @Fakable(condition: "FAKING")
+/// struct Receipt { ... }      // the same, written as the flag
+///
 /// @Fakable(condition: .always)
 /// struct Preview { ... }      // fake() with no #if guard
 /// ```
@@ -100,8 +103,8 @@
 ///   had nothing to do.
 /// - Parameter condition: The compilation condition that guards the generated
 ///   method. Defaults to ``FakeCompilationCondition/debug``. It has to be
-///   written literally at the attachment site (`.debug`, `.always`, or
-///   `.custom("FLAG")` with a string literal).
+///   written literally at the attachment site: `.debug`, `.always`,
+///   `.custom("FLAG")` with a string literal, or that literal on its own.
 @attached(member, names: named(fake))
 public macro Fakable(
     condition: FakeCompilationCondition = .debug

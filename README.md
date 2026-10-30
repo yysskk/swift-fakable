@@ -278,6 +278,9 @@ struct Item { ... }
 @Fakable(condition: .custom("FAKING"))       // #if FAKING
 struct Order { ... }
 
+@Fakable(condition: "FAKING")                // the same, written as the flag
+struct Receipt { ... }
+
 @Fakable(condition: .always)                 // no #if guard
 struct PreviewData { ... }
 ```
@@ -293,6 +296,9 @@ struct PreviewData { ... }
 - `.always` — emits `fake()` with no `#if` guard, in every build configuration.
   Use this deliberately, for example in a test-support module that is never
   linked into a shipping product.
+- A bare string literal is `.custom` of that literal, so
+  `condition: "FAKING"` and `condition: .custom("FAKING")` are the same
+  condition.
 
 The condition must be written literally at the attachment site — the macro
 expands at compile time and cannot read a value computed at run time.

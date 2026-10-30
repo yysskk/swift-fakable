@@ -43,15 +43,35 @@ enum CompilationCondition {
             }
         }
 
+        // `"FLAG"`, which `ExpressibleByStringLiteral` makes the same value as
+        // `.custom("FLAG")`.
+        if let literal = expression.as(StringLiteralExprSyntax.self) {
+            self = try Self(custom: literal)
+            return
+        }
+
         // `.custom("FLAG")`
         guard let call = expression.as(FunctionCallExprSyntax.self),
             let callee = call.calledExpression.as(MemberAccessExprSyntax.self),
             callee.base == nil,
             callee.declName.baseName.text == "custom",
             call.arguments.count == 1,
-            let literal = call.arguments.first?.expression.as(StringLiteralExprSyntax.self),
-            let condition = literal.representedLiteralValue
+            let literal = call.arguments.first?.expression.as(StringLiteralExprSyntax.self)
         else {
+            throw .unreadableCondition
+        }
+
+        self = try Self(custom: literal)
+    }
+
+    /// The condition a string literal spells out.
+    ///
+    /// - Throws: ``FakableDiagnostic/unreadableCondition`` for a literal the
+    ///   macro cannot read, such as an interpolated one, and
+    ///   ``FakableDiagnostic/invalidCondition(_:)`` for text `#if` would
+    ///   reject.
+    private init(custom literal: StringLiteralExprSyntax) throws(FakableDiagnostic) {
+        guard let condition = literal.representedLiteralValue else {
             throw .unreadableCondition
         }
 

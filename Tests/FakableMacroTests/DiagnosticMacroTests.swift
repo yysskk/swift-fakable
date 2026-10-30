@@ -261,7 +261,7 @@ struct DiagnosticMacroTests {
                 DiagnosticSpec(
                     message: """
                         '@Fakable' needs 'condition:' written literally as '.debug', \
-                        '.always', or '.custom("FLAG")'
+                        '.always', '.custom("FLAG")', or "FLAG"
                         """,
                     line: 1,
                     column: 1,
@@ -289,6 +289,61 @@ struct DiagnosticMacroTests {
             diagnostics: [
                 DiagnosticSpec(
                     message: #""not a condition!" is not a compilation condition '#if' accepts"#,
+                    line: 1,
+                    column: 1,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("String literal that #if would reject is an error")
+    func fakableWithInvalidStringLiteralCondition() {
+        assertMacroExpansionForTesting(
+            """
+            @Fakable(condition: "not a condition!")
+            struct Item {
+                let name: String
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    let name: String
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: #""not a condition!" is not a compilation condition '#if' accepts"#,
+                    line: 1,
+                    column: 1,
+                    severity: .error
+                )
+            ],
+            macros: testMacros
+        )
+    }
+
+    @Test("Interpolated string literal condition is an error")
+    func fakableWithInterpolatedCondition() {
+        assertMacroExpansionForTesting(
+            #"""
+            @Fakable(condition: "\(flag)")
+            struct Item {
+                let name: String
+            }
+            """#,
+            expandedSource: """
+                struct Item {
+                    let name: String
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        '@Fakable' needs 'condition:' written literally as '.debug', \
+                        '.always', '.custom("FLAG")', or "FLAG"
+                        """,
                     line: 1,
                     column: 1,
                     severity: .error
