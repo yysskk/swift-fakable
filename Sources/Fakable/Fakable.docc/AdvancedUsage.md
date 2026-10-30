@@ -89,8 +89,23 @@ A marked case's values are filled in the same way, and one the macro cannot
 write is an error on the marker. Mark at most one case, on a declaration of its
 own.
 
-Labels on associated values are preserved when present and omitted when not:
-`case tapped(String, at: Int)` fakes as `.tapped("", at: 0)`.
+The chosen case's associated values are the parameters `fake()` takes, each
+defaulted by its type, so `fake()` with no arguments returns what it always did
+and a test can name just the value it cares about:
+
+```swift
+@Fakable
+enum Connection {
+    case connected(host: String, port: Int)
+}
+
+Connection.fake()                      // .connected(host: "", port: 0)
+Connection.fake(host: "example.com")   // .connected(host: "example.com", port: 0)
+```
+
+A label the case declares is the parameter's argument label; a value declared
+without one is positional, so `case tapped(String, at: Int)` gives
+`fake(_ value0: String = "", at: Int = 0)`.
 
 ## Default values
 

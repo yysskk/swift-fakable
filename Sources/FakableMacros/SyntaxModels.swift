@@ -51,8 +51,16 @@ struct EnumCase {
 
 /// A single associated value of an enum case.
 struct AssociatedValue {
+    /// The label the case declares for it, or `nil` when it declares none.
+    ///
+    /// It is the argument label of the parameter `fake()` takes for the value,
+    /// so a value without one is passed positionally.
     let label: String?
 
-    /// The value `fake()` passes, or `nil` when none can be written for its type.
+    /// The parameter type, as the case declares it.
+    let type: String
+
+    /// The value the parameter defaults to, or `nil` when none can be written
+    /// for its type.
     let value: String?
 }

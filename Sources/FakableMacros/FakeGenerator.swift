@@ -290,6 +290,7 @@ enum FakeGenerator {
         parameterClause.parameters.map { parameter in
             AssociatedValue(
                 label: parameter.firstName?.text,
+                type: parameter.type.trimmedDescription,
                 value: parameter.type.fakeDefaultValue(genericParameterNames: genericParameterNames)
             )
         }
@@ -364,12 +365,18 @@ enum FakeGenerator {
 
     /// The enum `fake()` source, or `nil` when no value can be written for one
     /// of the case's associated values.
+    ///
+    /// The case's associated values become parameters, the way a struct's
+    /// stored properties do, each defaulted by its type. `fake()` still returns
+    /// the same value as before when it is called with no arguments, and a test
+    /// that wants one value of the case different no longer has to write the
+    /// case out by hand.
     static func enumFakeMethod(
         for fakeCase: EnumCase,
         accessLevel: AccessLevel,
         condition: CompilationCondition
     ) -> String? {
-        if fakeCase.associatedValues.isEmpty {
+        guard !fakeCase.associatedValues.isEmpty else {
             return condition.guarding(
                 """
                 \(accessLevel.prefixing("static func fake"))() -> Self {
@@ -379,21 +386,59 @@ enum FakeGenerator {
             )
         }
 
-        // Fill each associated value in from its type.
-        var renderedValues: [String] = []
-        for associatedValue in fakeCase.associatedValues {
+        var parameters: [String] = []
+        var arguments: [String] = []
+
+        for (associatedValue, name) in zip(
+            fakeCase.associatedValues,
+            parameterNames(for: fakeCase.associatedValues)
+        ) {
             guard let value = associatedValue.value else {
                 return nil
             }
-            renderedValues.append(associatedValue.label.map { "\($0): \(value)" } ?? value)
+
+            guard let label = associatedValue.label else {
+                // A value the case declares no label for is passed positionally,
+                // so its parameter takes none either.
+                parameters.append("    _ \(name): \(associatedValue.type) = \(value)")
+                arguments.append(name)
+                continue
+            }
+
+            let declaration = label == name ? name : "\(label) \(name)"
+            parameters.append("    \(declaration): \(associatedValue.type) = \(value)")
+            arguments.append("\(label): \(name)")
         }
 
         return condition.guarding(
             """
-            \(accessLevel.prefixing("static func fake"))() -> Self {
-                .\(fakeCase.name)(\(renderedValues.joined(separator: ", ")))
+            \(accessLevel.prefixing("static func fake"))(
+            \(parameters.joined(separator: ",\n"))
+            ) -> Self {
+                .\(fakeCase.name)(\(arguments.joined(separator: ", ")))
             }
             """
         )
+    }
+
+    /// The parameter name each associated value is referred to by inside
+    /// `fake()`, in order.
+    ///
+    /// A labeled value is named after its label, and one without a label after
+    /// its position, since there is nothing else to call it. Both are then made
+    /// unique: a name a previous value already took gains an underscore, so a
+    /// case can label a value `value0` without colliding with the name an
+    /// unlabeled one is given. Only the name inside the method changes; the
+    /// labels the caller writes are the ones the case declares.
+    private static func parameterNames(for associatedValues: [AssociatedValue]) -> [String] {
+        var taken: Set<String> = []
+
+        return associatedValues.enumerated().map { index, associatedValue in
+            var name = associatedValue.label ?? "value\(index)"
+            while !taken.insert(name).inserted {
+                name += "_"
+            }
+            return name
+        }
     }
 }

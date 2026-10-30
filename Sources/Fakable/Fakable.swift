@@ -56,8 +56,23 @@
 ///
 /// `fake()` returns the case marked ``FakeCase()``, or else the first case that
 /// has no associated values. When every case has associated values, the first
-/// one whose values can all be written is used, filled in with the same
-/// defaults listed above.
+/// one whose values can all be written is used.
+///
+/// That case's associated values become the parameters of `fake()`, each
+/// defaulted from the table above, so `fake()` with no arguments returns the
+/// same value either way and a test can name just the one it cares about. A
+/// value the case declares no label for is passed positionally, and its
+/// parameter takes no label either:
+///
+/// ```swift
+/// @Fakable
+/// enum Connection {
+///     case connected(host: String, port: Int)
+/// }
+///
+/// Connection.fake()                      // .connected(host: "", port: 0)
+/// Connection.fake(host: "example.com")   // .connected(host: "example.com", port: 0)
+/// ```
 ///
 /// ## Availability
 ///
@@ -142,9 +157,9 @@ public macro FakeValue<Value>(
 /// Status.fake() // .active
 /// ```
 ///
-/// A marked case with associated values gets them filled in from their types,
-/// the same way an unmarked one does, and is an error when one of them has no
-/// value the macro can write.
+/// A marked case's associated values become the parameters of `fake()`, each
+/// defaulted from its type, the same way an unmarked case's do. One of them
+/// with no value the macro can write is an error on the marker.
 ///
 /// - Note: Mark at most one case, on a declaration of its own:
 ///   `@FakeCase case active, inactive` would not say which one is meant.

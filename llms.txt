@@ -5,7 +5,7 @@
 swift-fakable provides a `@Fakable` macro that you attach to a struct or an enum. It generates a `static func fake(...)` wrapped in `#if DEBUG` (by default — the `condition:` argument selects a custom condition or removes the guard):
 
 - On a **struct**, one parameter per stored property, in declaration order, each defaulted to the value it declares or else by its type (a `public fake()` uses only a literal declared value), forwarded to the memberwise initializer. A property inside `#if` is a parameter only in the configurations that declare it; each clause gets its own `fake()`.
-- On an **enum**, a parameterless `fake()` returning the case marked `@FakeCase`, else the first case without associated values, or the first case with its values defaulted when every case has them.
+- On an **enum**, a `fake()` returning the case marked `@FakeCase`, else the first case without associated values, or the first case whose values can all be written when every case has them. That case's associated values become the parameters of `fake()`, each defaulted by its type; an unlabeled one is positional (`_ value0:`).
 - Tests name only the values they care about: `Item.fake(itemID: "item-1", price: 500)`.
 
 ## Default Values
@@ -33,7 +33,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Arrays, array slices, contiguous arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
 - Geometry types — `CGPoint`, `CGSize`, `CGRect`, `CGVector` — and `Duration`
-- Labeled and unlabeled enum associated values
+- Labeled and unlabeled enum associated values, as the parameters an enum's `fake()` takes
 - Nested `@Fakable` models through the `.fake()` fallback, and types you do not own through `FakeProvider`
 - Generic structs (generic-typed properties become required parameters) and generic enums
 - Per-property defaults with `@FakeValue(value)`, ahead of a declared value and the type's default (the value needs a type of its own: `Role.member`, not `.member`)
@@ -45,7 +45,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Struct properties need an explicit type annotation; inferred properties are skipped
 - `fake()` calls the memberwise initializer, so an `init` declared in the struct's body is an error unless it takes exactly the stored properties as labels, in order (declare a custom `init` in an extension)
 - Only structs and enums; anything else is a compile-time error
-- A generic enum is an error only when every case carries an associated value it cannot write (a generic parameter, a closure, a tuple), since `fake()` takes no parameters; a case with no associated values or with non-generic ones is used instead
+- A generic enum is an error only when every case carries an associated value it cannot write (a generic parameter, a closure, a tuple): `fake()` could ask for it, but then it could not be called with no arguments, which is what `.fake()` does; a case with no associated values or with non-generic ones is used instead
 - `condition:` is the only argument, and must be written literally as `.debug`, `.always`, or `.custom("CONDITION")`; a condition `#if` would reject is a compile-time error
 
 ## Requirements

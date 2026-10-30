@@ -47,6 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- An enum's `fake()` now takes the chosen case's associated values as
+  parameters, each defaulted by its type, the way a struct's stored properties
+  are. `fake()` with no arguments returns what it always did, so nothing that
+  compiled stops compiling, and a test that wants one value different no longer
+  has to write the case out by hand: `Connection.fake(host: "example.com")`. A
+  value the case declares no label for is passed positionally, as `_ value0`,
+  `_ value1`, and so on.
 - A `var` that declares its own value now defaults to that value in `fake()`,
   the way the memberwise initializer does, instead of to its type's default.
   `var page: Int = 1` gives `page: Int = 1` rather than `0`, and

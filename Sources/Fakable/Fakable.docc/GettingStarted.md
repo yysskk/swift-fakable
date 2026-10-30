@@ -51,7 +51,7 @@ integer types, `0.0` for the floating-point types, `false` for `Bool`, `[]` and
 
 ## Faking an enum
 
-On an enum, `fake()` takes no parameters and returns a representative case:
+On an enum, `fake()` returns a representative case:
 
 ```swift
 @Fakable
@@ -64,8 +64,19 @@ let status = Status.fake()   // .active
 ```
 
 A case without associated values is preferred, wherever it appears. When every
-case has associated values, the first case is used and its values are defaulted
-the same way a struct's properties are.
+case has associated values, the first case whose values can all be written is
+used, and those values become the parameters of `fake()`, defaulted the same way
+a struct's properties are:
+
+```swift
+@Fakable
+enum Connection {
+    case connected(host: String, port: Int)
+}
+
+Connection.fake()                      // .connected(host: "", port: 0)
+Connection.fake(host: "example.com")   // .connected(host: "example.com", port: 0)
+```
 
 ## Composing models
 
