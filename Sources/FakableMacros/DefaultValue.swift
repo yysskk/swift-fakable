@@ -7,6 +7,12 @@ import SwiftSyntax
 /// one of your own, such as `Models.Date`, keeps its base and does not.
 private let qualifyingModuleNames: Set<String> = ["CoreGraphics", "Foundation", "Swift"]
 
+/// The collections an empty array literal builds that are written as a name,
+/// rather than with the `[T]` sugar.
+private let arrayLiteralTypeNames: Set<String> = [
+    "Array", "ArraySlice", "ContiguousArray", "Set",
+]
+
 extension TypeSyntax {
     /// The value `fake()` uses for a parameter of this type, or `nil` when none
     /// can be written for it.
@@ -14,8 +20,9 @@ extension TypeSyntax {
     /// The same rules apply to a struct's stored properties and to an enum
     /// case's associated values, so both paths go through here. The table
     /// covers the stdlib types that have an obvious empty value, the Foundation
-    /// value types that stand in for one, and the collections. Every value is
-    /// deterministic, so two fakes of the same type compare equal.
+    /// and CoreGraphics value types that stand in for one, and the collections.
+    /// Every value is deterministic, so two fakes of the same type compare
+    /// equal.
     ///
     /// Matching is on the type as it was written, since the macro reads syntax
     /// and never resolves types. Sugar and longhand are read from the syntax
@@ -33,8 +40,12 @@ extension TypeSyntax {
         }
 
         switch unqualifiedSpelling {
-        case "String":
+        case "String", "Substring":
             return "\"\""
+        case "Character":
+            // A Character holds exactly one, so a space stands in for the empty
+            // string the other text types get.
+            return "\" \""
         case "Int", "Int8", "Int16", "Int32", "Int64", "Int128",
             "UInt", "UInt8", "UInt16", "UInt32", "UInt64", "UInt128":
             return "0"
@@ -58,13 +69,21 @@ extension TypeSyntax {
             return "URL(fileURLWithPath: \"/\")"
         case "Data":
             return "Data()"
+        case "Duration":
+            return ".zero"
+        case "CGPoint", "CGSize", "CGRect", "CGVector":
+            // The zero value, written as the no-argument initializer rather
+            // than `.zero`: the geometry types are named by Foundation, while
+            // `.zero` is declared in CoreGraphics, which the property's own
+            // type does not require.
+            return "\(unqualifiedSpelling)()"
         default:
             // Ahead of the generic check, so a collection is empty for the same
             // reason whatever it holds: the element type is never written out.
             if isDictionary {
                 return "[:]"
             }
-            if isArray || isSet {
+            if isArrayLiteralCollection {
                 return "[]"
             }
             if references(anyOf: genericParameterNames) {
@@ -89,11 +108,22 @@ extension TypeSyntax {
             || nominalName == "Optional"
     }
 
-    /// Whether the type is an array, however it is written.
+    /// Whether an empty array literal builds a value of the type, however it is
+    /// written.
     ///
-    /// Covers the `[String]` sugar as well as the longhand `Array<String>`.
-    var isArray: Bool {
-        self.is(ArrayTypeSyntax.self) || nominalName == "Array"
+    /// Covers the `[String]` sugar as well as the longhand `Array<String>`, and
+    /// the collections that have no sugar of their own: `Set<String>`,
+    /// `ArraySlice<String>`, and `ContiguousArray<String>`. Every one of them is
+    /// `ExpressibleByArrayLiteral`, so `[]` is its empty value whatever it
+    /// holds.
+    var isArrayLiteralCollection: Bool {
+        guard !self.is(ArrayTypeSyntax.self) else {
+            return true
+        }
+        guard let nominalName else {
+            return false
+        }
+        return arrayLiteralTypeNames.contains(nominalName)
     }
 
     /// Whether the type is a dictionary, however it is written.
@@ -103,14 +133,6 @@ extension TypeSyntax {
     /// is a dictionary and not an array, because the node says which it is.
     var isDictionary: Bool {
         self.is(DictionaryTypeSyntax.self) || nominalName == "Dictionary"
-    }
-
-    /// Whether the type is a `Set`, however its element type is spelled.
-    ///
-    /// A set has no sugar of its own, so `Set<String>` is the only way to write
-    /// one.
-    var isSet: Bool {
-        nominalName == "Set"
     }
 
     /// Whether the type is written as a name, such as `Item` or

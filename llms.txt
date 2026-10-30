@@ -10,17 +10,18 @@ swift-fakable provides a `@Fakable` macro that you attach to a struct or an enum
 
 ## Default Values
 
-- `String` → `""`
+- `String`, `Substring` → `""`, `Character` → `" "`
 - `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128`, `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` → `0`
 - `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` → `0.0`
 - `Bool` → `false`
 - `Decimal` → `0`, `Date` → `Date(timeIntervalSince1970: 0)`, `UUID` → the nil UUID, `URL` → `URL(fileURLWithPath: "/")`, `Data` → `Data()`
+- `Duration` → `.zero`; `CGPoint`, `CGSize`, `CGRect`, `CGVector` → the zero value, as `CGPoint()` and so on (the no-argument initializer, since `.zero` needs CoreGraphics while Foundation names the type)
 - `T?` / `T!` / `Optional<T>` → `nil` (checked before the type name)
 - a generic parameter of the enclosing type → no default; the parameter is required
 - `[K: V]` / `Dictionary<K, V>` → `[:]`
-- `[T]` / `Array<T>` → `[]`, `Set<T>` → `[]`
+- `[T]` / `Array<T>` / `ArraySlice<T>` / `ContiguousArray<T>` → `[]`, `Set<T>` → `[]`
 - a closure, tuple, `any P`, `P & Q`, or metatype → no default; the parameter is required (a closure is marked `@escaping`)
-- any other named type → `.fake()`, so nested models compose when each is `@Fakable`
+- any other named type → `.fake()`, so nested models compose when each is `@Fakable`; a type the macro cannot be attached to (another module's type, a class, an actor) joins in by conforming to `FakeProvider`, which is that contract as a protocol: one `static func fake() -> Self`
 
 Matching is on the written spelling, so a type alias for `String` resolves to `.fake()`, not `""`. The spelling is read from the syntax tree rather than from the text, so sugar and longhand agree and a `Swift.` or `Foundation.` qualifier is dropped; a type nested in one of your own, such as `Models.Date`, keeps the `.fake()` fallback. Every default is deterministic, so two fakes of the same model are equal where the model is `Equatable`.
 
@@ -29,10 +30,11 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - Structs and enums, with or without associated values
 - Access-level-aware generation, `private` through `public`, including `package`
 - Optional and implicitly unwrapped optional properties
-- Arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
+- Arrays, array slices, contiguous arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
+- Geometry types — `CGPoint`, `CGSize`, `CGRect`, `CGVector` — and `Duration`
 - Labeled and unlabeled enum associated values
-- Nested `@Fakable` models through the `.fake()` fallback
+- Nested `@Fakable` models through the `.fake()` fallback, and types you do not own through `FakeProvider`
 - Generic structs (generic-typed properties become required parameters) and generic enums
 - Per-property defaults with `@FakeValue(value)`, ahead of a declared value and the type's default (the value needs a type of its own: `Role.member`, not `.member`)
 - Configurable compilation condition (`@Fakable(condition:)` — `.debug` default, `.custom("FAKING")` / `.custom("DEBUG || UITESTS")`, or `.always`)

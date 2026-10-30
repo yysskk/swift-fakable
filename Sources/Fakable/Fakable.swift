@@ -24,7 +24,7 @@
 /// default arguments may reference only public declarations. Every other
 /// parameter is defaulted by its type:
 ///
-/// - `String`: `""`
+/// - `String` and `Substring`: `""`; `Character`: `" "`
 /// - `Int`, `UInt`, and the sized integer types, `Int128` and `UInt128`
 ///   included: `0`
 /// - `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval`: `0.0`
@@ -32,7 +32,9 @@
 /// - `Decimal`: `0`
 /// - `Date`: the epoch; `UUID`: the nil UUID; `URL`: `URL(fileURLWithPath: "/")`;
 ///   `Data`: `Data()`
-/// - `Array` (`[T]`) and `Set` (`Set<T>`): `[]`
+/// - `Duration`: `.zero`; `CGPoint`, `CGSize`, `CGRect`, `CGVector`: the zero
+///   value, written as `CGPoint()` and so on
+/// - `Array` (`[T]`), `ArraySlice`, `ContiguousArray`, and `Set` (`Set<T>`): `[]`
 /// - `Dictionary` (`[K: V]`): `[:]`
 /// - `Optional`: `nil`
 /// - a closure, tuple, `any P`, `P & Q`, or metatype: no default, so the

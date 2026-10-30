@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- More of the standard value types have a default, so they no longer fall
+  through to `.fake()` and fail to compile: `Substring` takes `""` and
+  `Character` a single space, `Duration` takes `.zero`, `ArraySlice` and
+  `ContiguousArray` take `[]`, and `CGPoint`, `CGSize`, `CGRect`, and
+  `CGVector` take their zero value as `CGPoint()` and so on — the no-argument
+  initializer rather than `.zero`, which is declared in CoreGraphics while
+  Foundation is what names the type. A type of your own with one of these
+  names now takes the table's default rather than `.fake()`, the way one named
+  `Date` or `URL` already did.
 - `FakeProvider` is the `.fake()` fallback written down as a protocol: one
   `static func fake() -> Self`. Conform a type `@Fakable` cannot be attached to
   — one from another module, a class, or an actor — and a `@Fakable` model that

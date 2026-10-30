@@ -96,7 +96,8 @@ Labels on associated values are preserved when present and omitted when not:
 
 | Type as written | Default |
 | --- | --- |
-| `String` | `""` |
+| `String`, `Substring` | `""` |
+| `Character` | `" "` |
 | `Int`, `Int8`, `Int16`, `Int32`, `Int64`, `Int128` | `0` |
 | `UInt`, `UInt8`, `UInt16`, `UInt32`, `UInt64`, `UInt128` | `0` |
 | `Double`, `Float`, `Float16`, `CGFloat`, `TimeInterval` | `0.0` |
@@ -106,9 +107,11 @@ Labels on associated values are preserved when present and omitted when not:
 | `UUID` | `UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))` |
 | `URL` | `URL(fileURLWithPath: "/")` |
 | `Data` | `Data()` |
+| `Duration` | `.zero` |
+| `CGPoint`, `CGSize`, `CGRect`, `CGVector` | the zero value, as `CGPoint()` and so on |
 | `T?`, `T!`, or `Optional<T>` | `nil` |
 | `[K: V]` or `Dictionary<K, V>` | `[:]` |
-| `[T]` or `Array<T>` | `[]` |
+| `[T]`, `Array<T>`, `ArraySlice<T>`, or `ContiguousArray<T>` | `[]` |
 | `Set<T>` | `[]` |
 | a generic parameter of the enclosing type | none — the parameter is required |
 | a closure, tuple, `any P`, `P & Q`, or metatype | none — the parameter is required |
@@ -122,6 +125,9 @@ Labels on associated values are preserved when present and omitted when not:
 - **A module qualifier is dropped**, so `Swift.String` and `Foundation.Date`
   take the defaults `String` and `Date` take. Only `Swift`, `Foundation`, and
   `CoreGraphics` count as qualifiers; `Models.Date` keeps the `.fake()` fallback.
+- **A geometry type gets its zero value from an initializer**: `CGPoint()`
+  rather than `.zero`, since Foundation names `CGPoint`, `CGSize`, `CGRect`,
+  and `CGVector` while `.zero` is declared in CoreGraphics.
 - **A Foundation value type gets a deterministic value**: `Date` is the epoch
   and `UUID` is the nil UUID, so two fakes of the same model are equal.
 - **Only a named type falls back to `.fake()`.** A closure, tuple, `any P`,
