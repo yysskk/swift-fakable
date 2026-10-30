@@ -37,6 +37,7 @@ release build. ``FakeCompilationCondition`` selects a different guard, or none.
 
 - ``FakeValue(_:)``
 - ``FakeCase()``
+- ``FakeProvider``
 
 ### Going further
 

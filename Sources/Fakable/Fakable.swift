@@ -37,7 +37,8 @@
 /// - `Optional`: `nil`
 /// - a closure, tuple, `any P`, `P & Q`, or metatype: no default, so the
 ///   parameter is required; a closure is marked `@escaping`
-/// - any other named type: `.fake()`, so that type needs `@Fakable` too
+/// - any other named type: `.fake()`, so that type needs `@Fakable` too, or a
+///   ``FakeProvider`` conformance where the macro cannot be attached to it
 ///
 /// ## Enums
 ///

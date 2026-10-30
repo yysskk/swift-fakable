@@ -290,3 +290,36 @@ struct TestNestedCollectionContainer {
     let matrix: [[String]]
     let name: String!
 }
+
+/// Stands in for a type `@Fakable` cannot be attached to, such as a struct
+/// from another module, taught about `fake()` by conforming to `FakeProvider`.
+struct TestCoordinate: Equatable {
+    let latitude: Double
+    let longitude: Double
+}
+
+extension TestCoordinate: FakeProvider {
+    static func fake() -> Self {
+        Self(latitude: 0, longitude: 0)
+    }
+}
+
+/// A class provider, which `@Fakable` itself cannot generate.
+final class TestConnectionPool: FakeProvider {
+    let name: String
+
+    init(name: String) {
+        self.name = name
+    }
+
+    static func fake() -> Self {
+        Self(name: "")
+    }
+}
+
+@Fakable
+struct TestPlace {
+    let name: String
+    let coordinate: TestCoordinate
+    let pool: TestConnectionPool
+}
