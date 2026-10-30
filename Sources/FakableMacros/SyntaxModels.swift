@@ -1,3 +1,5 @@
+import SwiftSyntax
+
 /// A stored property of a struct that `fake()` needs a parameter for.
 struct StoredProperty: Equatable {
     let name: String
@@ -47,6 +49,25 @@ indirect enum StoredPropertyLayout: Equatable {
 struct EnumCase {
     let name: String
     let associatedValues: [AssociatedValue]
+
+    /// Whether every associated value has a value the macro can write.
+    ///
+    /// Only such a case can be what `fake()` returns: `fake()` has to be
+    /// callable with no arguments, since `.fake()` is how a nested model
+    /// reaches it. A case carrying a generic parameter or a closure is not one,
+    /// and is reported rather than generated.
+    var isWritable: Bool {
+        associatedValues.allSatisfy { $0.value != nil }
+    }
+}
+
+/// A case marked `@FakeCase`, with the attribute that marks it.
+///
+/// The attribute is kept so a diagnostic about the choice is reported where the
+/// choice was made, rather than on `@Fakable`.
+struct MarkedCase {
+    let fakeCase: EnumCase
+    let attribute: AttributeSyntax
 }
 
 /// A single associated value of an enum case.

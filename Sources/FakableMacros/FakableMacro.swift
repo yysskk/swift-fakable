@@ -26,90 +26,118 @@ public struct FakableMacro: MemberMacro {
         let accessLevel = AccessLevel(of: declaration).memberLevel
 
         if let structDecl = declaration.as(StructDeclSyntax.self) {
-            let layout = FakeGenerator.storedPropertyLayout(
-                of: structDecl,
-                accessLevel: accessLevel
-            )
-
-            guard layout.configurations.contains(where: { !$0.isEmpty }) else {
-                context.diagnose(node, .noStoredProperties)
-                return []
-            }
-
-            if let initializer = FakeGenerator.initializerBlockingMemberwise(
-                of: structDecl,
-                layout: layout
-            ) {
-                context.diagnose(
-                    Diagnostic(node: initializer, message: FakableDiagnostic.memberwiseInitializerUnavailable)
-                )
-                return []
-            }
-
-            let fakeMethod = FakeGenerator.fakeMethod(
-                for: layout,
+            return expand(
+                structDecl,
+                markedBy: node,
                 accessLevel: accessLevel,
-                condition: condition
+                condition: condition,
+                in: context
             )
-            return [DeclSyntax(stringLiteral: fakeMethod)]
         }
 
         if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-            for attribute in FakeGenerator.conditionalFakeCaseAttributes(of: enumDecl) {
-                context.diagnose(
-                    Diagnostic(node: attribute, message: FakableDiagnostic.conditionalFakeCase)
-                )
-            }
-
-            let markedCases = FakeGenerator.markedCases(of: enumDecl)
-
-            for marked in markedCases.dropFirst() {
-                context.diagnose(
-                    Diagnostic(node: marked.attribute, message: FakableDiagnostic.duplicateFakeCase)
-                )
-            }
-
-            // A marked case is used whatever it carries, so a value it cannot
-            // write is reported on the marker rather than worked around.
-            if let marked = markedCases.first {
-                guard markedCases.count == 1 else {
-                    return []
-                }
-                guard
-                    let fakeMethod = FakeGenerator.enumFakeMethod(
-                        for: marked.fakeCase,
-                        accessLevel: accessLevel,
-                        condition: condition
-                    )
-                else {
-                    context.diagnose(
-                        Diagnostic(node: marked.attribute, message: FakableDiagnostic.unwritableFakeCase)
-                    )
-                    return []
-                }
-                return [DeclSyntax(stringLiteral: fakeMethod)]
-            }
-
-            guard let fakeCase = FakeGenerator.fakeCase(of: enumDecl) else {
-                context.diagnose(node, .noCases)
-                return []
-            }
-
-            guard
-                let fakeMethod = FakeGenerator.enumFakeMethod(
-                    for: fakeCase,
-                    accessLevel: accessLevel,
-                    condition: condition
-                )
-            else {
-                context.diagnose(node, .unwritableAssociatedValue)
-                return []
-            }
-            return [DeclSyntax(stringLiteral: fakeMethod)]
+            return expand(
+                enumDecl,
+                markedBy: node,
+                accessLevel: accessLevel,
+                condition: condition,
+                in: context
+            )
         }
 
         context.diagnose(node, .unsupportedDeclaration)
         return []
+    }
+
+    /// The `fake()` for a struct, or nothing when a diagnostic takes its place.
+    private static func expand(
+        _ structDecl: StructDeclSyntax,
+        markedBy node: AttributeSyntax,
+        accessLevel: AccessLevel,
+        condition: CompilationCondition,
+        in context: some MacroExpansionContext
+    ) -> [DeclSyntax] {
+        let builder = StructFakeBuilder(
+            of: structDecl,
+            accessLevel: accessLevel,
+            condition: condition
+        )
+
+        guard builder.hasStoredProperties else {
+            context.diagnose(node, .noStoredProperties)
+            return []
+        }
+
+        if let initializer = builder.initializerBlockingMemberwise {
+            context.diagnose(
+                Diagnostic(
+                    node: initializer,
+                    message: FakableDiagnostic.memberwiseInitializerUnavailable
+                )
+            )
+            return []
+        }
+
+        return [DeclSyntax(stringLiteral: builder.fakeMethod())]
+    }
+
+    /// The `fake()` for an enum, or nothing when a diagnostic takes its place.
+    private static func expand(
+        _ enumDecl: EnumDeclSyntax,
+        markedBy node: AttributeSyntax,
+        accessLevel: AccessLevel,
+        condition: CompilationCondition,
+        in context: some MacroExpansionContext
+    ) -> [DeclSyntax] {
+        let builder = EnumFakeBuilder(
+            of: enumDecl,
+            accessLevel: accessLevel,
+            condition: condition
+        )
+
+        for attribute in builder.conditionalFakeCaseAttributes {
+            context.diagnose(Diagnostic(node: attribute, message: FakableDiagnostic.conditionalFakeCase))
+        }
+
+        let markedCases = builder.markedCases
+        for marked in markedCases.dropFirst() {
+            context.diagnose(Diagnostic(node: marked.attribute, message: FakableDiagnostic.duplicateFakeCase))
+        }
+        guard markedCases.count <= 1 else {
+            return []
+        }
+
+        // The case to return, and where a value the macro cannot write is
+        // reported. A marked case is used whatever it carries, so the failure
+        // belongs on the marker; an unmarked one was the macro's own choice, so
+        // it belongs on the attribute.
+        let fakeCase: EnumCase
+        let unwritable: Diagnostic
+
+        if let marked = markedCases.first {
+            fakeCase = marked.fakeCase
+            unwritable = Diagnostic(
+                node: marked.attribute,
+                message: FakableDiagnostic.unwritableFakeCase
+            )
+        } else {
+            guard let chosen = builder.fakeCase else {
+                context.diagnose(node, .noCases)
+                return []
+            }
+            fakeCase = chosen
+            unwritable = Diagnostic(
+                node: node,
+                message: FakableDiagnostic.unwritableAssociatedValue
+            )
+        }
+
+        guard fakeCase.isWritable else {
+            context.diagnose(unwritable)
+            return []
+        }
+
+        return [DeclSyntax(stringLiteral: builder.fakeMethod(for: fakeCase))]
     }
 }
 

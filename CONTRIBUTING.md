@@ -5,13 +5,15 @@ project layout, how to build and test, and the conventions we follow.
 
 ## Project layout
 
-- `Sources/Fakable/` — the runtime module clients depend on. It declares the
-  `@Fakable` macro and nothing else; there is no runtime code.
+- `Sources/Fakable/` — the module clients depend on. It declares the macros and
+  `FakeProvider`, the protocol a type the macros cannot be attached to conforms
+  to; there is no other runtime code.
 - `Sources/FakableMacros/` — the macro implementation (built on
   [swift-syntax](https://github.com/swiftlang/swift-syntax)). `FakableMacro` is
-  the entry point, `FakeGenerator` reads the declaration and renders the method
-  source, and `TypeSyntax.fakeDefaultValue(genericParameterNames:)` in
-  `DefaultValue.swift` decides the default for each parameter type.
+  the entry point; `StructFakeBuilder` and `EnumFakeBuilder` read the
+  declaration and render the method source, one per kind of declaration; and
+  `TypeSyntax.fakeDefaultValue(genericParameterNames:)` in `DefaultValue.swift`
+  decides the default for each parameter type.
 - `Tests/FakableMacroTests/` — macro-expansion tests that pin the exact
   generated source, one suite per concern.
 - `Tests/FakableTests/` — runtime tests that exercise the behavior of the
