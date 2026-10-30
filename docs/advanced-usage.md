@@ -288,6 +288,52 @@ Seven details are worth spelling out:
   [Generic types](#generic-types)). The check is made token by token, so a type
   named `Total` is not mistaken for a generic parameter named `T`.
 
+### Teaching `.fake()` about a type you do not own
+
+The `.fake()` fallback is what makes nested models compose, and it only needs a
+`static func fake() -> Self` to be in scope: the macro reads syntax and never
+resolves types, so it writes the call and leaves the rest to the compiler. For
+the structs and enums you own, `@Fakable` writes that method. For a type you
+cannot attach the macro to — one from another module, a class, or an actor —
+conform it to `FakeProvider`:
+
+```swift
+import CoreLocation
+import Fakable
+
+extension CLLocationCoordinate2D: FakeProvider {
+    public static func fake() -> Self {
+        Self(latitude: 0, longitude: 0)
+    }
+}
+
+@Fakable
+struct Place {
+    let name: String
+    let coordinate: CLLocationCoordinate2D   // defaults to .fake()
+}
+```
+
+The protocol is the contract written down. Conforming is not what makes
+`.fake()` resolve — a plain `extension` declaring the same method works just as
+well — but it names the contract, has the compiler check that the method has the
+shape `fake()` expects, and lets generic code build a value of a type it does
+not know:
+
+```swift
+func fakes<Element: FakeProvider>(_ count: Int) -> [Element] {
+    (0..<count).map { _ in Element.fake() }
+}
+```
+
+Return a value that does not change between two calls, the way the macro's own
+defaults do, so two fakes of the same type stay equal.
+
+A `@Fakable` struct or enum does not conform on its own, and nothing needs it
+to: its `fake()` is guarded by a compilation condition while a conformance holds
+in every configuration, and a struct's `fake()` takes one defaulted parameter
+per stored property, which does not satisfy a requirement written `fake()`.
+
 ## Overriding a default with `@FakeValue`
 
 `@FakeValue(value)` on a stored property sets the default its `fake()`

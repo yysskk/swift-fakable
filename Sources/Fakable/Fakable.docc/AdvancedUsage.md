@@ -134,8 +134,20 @@ Labels on associated values are preserved when present and omitted when not:
 The `.fake()` fallback is what makes nested models compose. If a nested type has
 no `fake()`, the failure surfaces as `value of type 'X' has no member 'fake'` in
 the generated code — add ``Fakable(condition:)`` to that type, or pass the parameter
-explicitly. For a type from a module you do not control, passing it explicitly
-(or wrapping it in a `@Fakable` type of your own) is the way.
+explicitly.
+
+For a type you cannot attach the macro to — one from another module, a class, or
+an actor — conform it to ``FakeProvider`` instead. The protocol is the `.fake()`
+contract written down: one `static func fake() -> Self`, checked by the compiler
+and usable from generic code.
+
+```swift
+extension CLLocationCoordinate2D: FakeProvider {
+    public static func fake() -> Self {
+        Self(latitude: 0, longitude: 0)
+    }
+}
+```
 
 ## Overriding a default
 

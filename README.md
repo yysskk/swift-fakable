@@ -181,6 +181,33 @@ struct User {
 let user = User.fake(address: .fake(city: "Tokyo"))
 ```
 
+For a type you cannot attach the macro to — one from another module, a class, or
+an actor — conform it to `FakeProvider` instead. The protocol is the `.fake()`
+contract written down: one `static func fake() -> Self`, checked by the compiler
+and usable from generic code.
+
+```swift
+import CoreLocation
+import Fakable
+
+extension CLLocationCoordinate2D: FakeProvider {
+    public static func fake() -> Self {
+        Self(latitude: 0, longitude: 0)
+    }
+}
+
+@Fakable
+struct Place {
+    let name: String
+    let coordinate: CLLocationCoordinate2D   // defaults to .fake()
+}
+```
+
+Return a value that does not change between two calls, the way the defaults
+above do. A `@Fakable` type does not conform on its own, and nothing needs it
+to: its `fake()` is guarded by a compilation condition while a conformance holds
+in every configuration.
+
 The same table applies to an enum case's associated values.
 
 ## Overriding a Default
@@ -249,7 +276,8 @@ expands at compile time and cannot read a value computed at run time.
 - Optional and implicitly unwrapped optional properties
 - Arrays, dictionaries, and sets, in bracket sugar or longhand generic spelling
 - Foundation value types: `Date`, `UUID`, `URL`, `Data`, `Decimal`, `TimeInterval`
-- Nested `@Fakable` types through the `.fake()` fallback
+- Nested `@Fakable` types through the `.fake()` fallback, and types you do not
+  own through `FakeProvider`
 - Labeled and unlabeled associated values on enum cases
 - Generic structs and enums
 - Per-property defaults with `@FakeValue`, and the enum case with `@FakeCase`
@@ -309,8 +337,8 @@ expands at compile time and cannot read a value computed at run time.
 
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
   actor, or protocol is a compile-time error reported on the attribute itself. A
-  class or actor can still appear in a `@Fakable` model: give it a hand-written
-  `static func fake()` and its properties pick that up through `.fake()`.
+  class or actor can still appear in a `@Fakable` model: conform it to
+  `FakeProvider` and its properties pick that up through `.fake()`.
 - `fake()` takes exactly the parameters the memberwise initializer takes, since
   that is what its body calls. Type-level (`static`) properties, computed
   properties, and constants that already have a value are left out for that
@@ -326,7 +354,8 @@ expands at compile time and cannot read a value computed at run time.
   the property to include it.
 - The `.fake()` fallback is emitted for any other type written as a name. If
   that type has no `fake()`, the error surfaces at compile time in the generated
-  code; add `@Fakable` to it, or pass an explicit value at the call site. A
+  code; add `@Fakable` to it, conform it to `FakeProvider`, or pass an explicit
+  value at the call site. A
   closure, tuple, `any P`, `P & Q`, or metatype has no `fake()` to call, so its
   parameter is required instead, and a closure parameter is marked `@escaping`.
 - Types are matched by their written spelling, so a type alias for `String`
@@ -358,8 +387,8 @@ expands at compile time and cannot read a value computed at run time.
   first time you build a target that uses `@Fakable` (see the note in
   [Installation](#installation)).
 - **`value of type 'X' has no member 'fake'`.** A property of type `X` fell
-  through to the `.fake()` default. Add `@Fakable` to `X`, or pass a value for
-  that parameter explicitly.
+  through to the `.fake()` default. Add `@Fakable` to `X`, conform `X` to
+  `FakeProvider` when you cannot, or pass a value for that parameter explicitly.
 - **A property is missing from `fake()`.** It most likely has no explicit type
   annotation, or it is computed. See [Diagnostics and Limitations](#diagnostics-and-limitations).
 

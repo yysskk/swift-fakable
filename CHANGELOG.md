@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `FakeProvider` is the `.fake()` fallback written down as a protocol: one
+  `static func fake() -> Self`. Conform a type `@Fakable` cannot be attached to
+  — one from another module, a class, or an actor — and a `@Fakable` model that
+  nests it compiles with no value of its own. The conformance is checked by the
+  compiler and usable from generic code; a `@Fakable` type needs none, since
+  its `fake()` is guarded by a compilation condition.
 - `Int128` and `UInt128` default to `0`, and `Float16` to `0.0`. They used to
   fall through to `.fake()` and fail to compile.
 - `@FakeCase` marks the case an enum's `fake()` returns, in place of the first
