@@ -57,6 +57,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `swift-docc-plugin` is added to the manifest only when
+  `FAKABLE_BUILD_DOCUMENTATION` is set, so a package depending on
+  `swift-fakable` no longer resolves it, or the symbol-kit package behind it.
+  Nothing about the library changes; building the documentation now needs the
+  variable, which the docs workflow sets.
 - An enum's `fake()` now takes the chosen case's associated values as
   parameters, each defaulted by its type, the way a struct's stored properties
   are. `fake()` with no arguments returns what it always did, so nothing that

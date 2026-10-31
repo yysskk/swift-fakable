@@ -1,6 +1,7 @@
 // swift-tools-version: 6.0
 
 import CompilerPluginSupport
+import Foundation
 import PackageDescription
 
 /// Upcoming language features every target opts into, so the package is
@@ -28,7 +29,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", "600.0.0"..<"605.0.0"),
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.3"),
     ],
     targets: [
         .macro(
@@ -68,3 +68,13 @@ let package = Package(
         ),
     ]
 )
+
+// swift-docc-plugin builds the documentation and takes no part in the library,
+// but a dependency declared here is one every client resolves as well. It is
+// added only where the documentation is actually built: the docs workflow sets
+// FAKABLE_BUILD_DOCUMENTATION, and so does anyone generating them by hand.
+if ProcessInfo.processInfo.environment["FAKABLE_BUILD_DOCUMENTATION"] != nil {
+    package.dependencies.append(
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin.git", from: "1.4.3")
+    )
+}

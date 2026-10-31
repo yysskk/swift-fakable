@@ -98,6 +98,18 @@ these together so they don't drift:
 - `llms.txt` and `llms-full.txt`
 - the DocC catalog under `Sources/Fakable/Fakable.docc/`
 
+### Building the DocC catalog
+
+```sh
+FAKABLE_BUILD_DOCUMENTATION=1 swift package --allow-writing-to-directory ./docs \
+  generate-documentation --target Fakable --output-path ./docs
+```
+
+`swift-docc-plugin` is in the manifest only when `FAKABLE_BUILD_DOCUMENTATION`
+is set, so a package depending on `swift-fakable` does not resolve it. Without
+the variable `generate-documentation` is not a known subcommand, which is the
+expected answer rather than a broken checkout.
+
 ## Commit and PR conventions
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/) for commit
