@@ -48,19 +48,30 @@ extension FixIt {
         // `Array(...)` first, so this reads the same against every swift-syntax
         // version in the supported range: `filter` on a syntax collection
         // started returning the collection itself partway through it.
-        let remaining = AttributeListSyntax(
+        var remaining = AttributeListSyntax(
             Array(attributes).filter { $0.as(AttributeSyntax.self)?.id != attribute.id }
         )
+
+        // The trivia in front of the attribute — the line break and the
+        // indentation that put it where it is — is the list's when the
+        // attribute is what the list starts with. Whatever follows has to
+        // inherit it, or it is removed along with the attribute and what
+        // followed is pulled up onto the previous line.
+        //
+        // An attribute that remains takes it as part of the replacement, since
+        // a change to a token inside the list being replaced would be thrown
+        // away with the list. Only the declaration's own first token, which is
+        // outside it, is edited on its own.
+        let isFirst = attributes.first?.as(AttributeSyntax.self)?.id == attribute.id
+        if isFirst, !remaining.isEmpty {
+            remaining = remaining.with(\.leadingTrivia, attribute.leadingTrivia)
+        }
 
         var changes: [FixIt.Change] = [
             .replace(oldNode: Syntax(attributes), newNode: Syntax(remaining))
         ]
 
-        // The trivia in front of the attribute — the line break and the
-        // indentation that put it on a line of its own — belongs to whatever
-        // follows once the attribute is gone. Without this the declaration
-        // would be pulled up onto the previous line.
-        if remaining.isEmpty, let next = attribute.nextToken(viewMode: .sourceAccurate) {
+        if isFirst, remaining.isEmpty, let next = attribute.nextToken(viewMode: .sourceAccurate) {
             changes.append(
                 .replaceLeadingTrivia(token: next, newTrivia: attribute.leadingTrivia)
             )

@@ -110,6 +110,45 @@ struct FixItMacroTests {
         )
     }
 
+    @Test("Removing the first of several markers hands its line break on")
+    func removeFakeValueWrittenFirstAndInline() {
+        // The attribute carries the line break and the indentation in front of
+        // it, so removing it has to hand them to the attribute that follows.
+        assertMacroExpansionForTesting(
+            """
+            struct Item {
+                @FakeValue(1) @available(macOS 15.0, *)
+                var count: Int { 0 }
+            }
+            """,
+            expandedSource: """
+                struct Item {
+                    @available(macOS 15.0, *)
+                    var count: Int { 0 }
+                }
+                """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: """
+                        '@FakeValue' has no effect here; 'fake()' takes no parameter for this \
+                        property, or its type is not '@Fakable'
+                        """,
+                    line: 2,
+                    column: 5,
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeValue'")]
+                )
+            ],
+            macros: testMacros,
+            fixedSource: """
+                struct Item {
+                    @available(macOS 15.0, *)
+                    var count: Int { 0 }
+                }
+                """
+        )
+    }
+
     @Test("An unreadable condition is replaced with .debug")
     func replaceUnreadableConditionWithDebug() {
         assertMacroExpansionForTesting(
