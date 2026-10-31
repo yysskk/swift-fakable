@@ -53,6 +53,17 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
     /// for, or to a property of a type without `@Fakable`.
     case unusedFakeValue
 
+    /// Whether this is ``unreadableCondition``.
+    ///
+    /// The one diagnostic with a repair that needs no guess at what was meant,
+    /// which is why the `condition:` fix-it asks.
+    var isUnreadableCondition: Bool {
+        if case .unreadableCondition = self {
+            return true
+        }
+        return false
+    }
+
     var message: String {
         descriptor.message
     }

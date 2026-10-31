@@ -19,7 +19,18 @@ public struct FakableMacro: MemberMacro {
         do {
             condition = try CompilationCondition(of: node)
         } catch {
-            context.diagnose(node, error)
+            context.diagnose(
+                Diagnostic(
+                    node: node,
+                    message: error,
+                    // Only an argument the macro cannot read has one repair that
+                    // needs no guess. A condition `#if` rejects is text the
+                    // author meant, so it is theirs to correct.
+                    fixIts: error.isUnreadableCondition
+                        ? [FixIt.usingDebugCondition(on: node)].compactMap { $0 }
+                        : []
+                )
+            )
             return []
         }
 
@@ -96,12 +107,12 @@ public struct FakableMacro: MemberMacro {
         )
 
         for attribute in builder.conditionalFakeCaseAttributes {
-            context.diagnose(Diagnostic(node: attribute, message: FakableDiagnostic.conditionalFakeCase))
+            context.diagnose(Diagnostic(removing: attribute, message: .conditionalFakeCase))
         }
 
         let markedCases = builder.markedCases
         for marked in markedCases.dropFirst() {
-            context.diagnose(Diagnostic(node: marked.attribute, message: FakableDiagnostic.duplicateFakeCase))
+            context.diagnose(Diagnostic(removing: marked.attribute, message: .duplicateFakeCase))
         }
         guard markedCases.count <= 1 else {
             return []

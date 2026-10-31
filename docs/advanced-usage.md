@@ -573,6 +573,14 @@ the same reason.
 
 ## Errors
 
+Most of these carry a Fix-It, so Xcode offers the repair rather than only
+describing it. A marker attribute that has no effect, or that cannot be used
+where it is, offers **Remove '@FakeCase'** or **Remove '@FakeValue'**; a
+`condition:` the macro cannot read offers **Replace with '.debug'**. A struct
+whose `init` hides the memberwise one does not: moving that `init` to an
+extension is an edit in two places the macro cannot make safely, so the message
+describes it instead.
+
 Attaching `@Fakable` to anything other than a struct or an enum is a
 compile-time error, reported on the attribute itself:
 

@@ -46,6 +46,7 @@ Matching is on the written spelling, so a type alias for `String` resolves to `.
 - `fake()` calls the memberwise initializer, so an `init` declared in the struct's body is an error unless it takes exactly the stored properties as labels, in order (declare a custom `init` in an extension)
 - Only structs and enums; anything else is a compile-time error
 - A generic enum is an error only when every case carries an associated value it cannot write (a generic parameter, a closure, a tuple): `fake()` could ask for it, but then it could not be called with no arguments, which is what `.fake()` does; a case with no associated values or with non-generic ones is used instead
+- Diagnostics carry a Fix-It where the repair is unambiguous: "Remove '@FakeCase'" / "Remove '@FakeValue'" for a marker with no effect, "Replace with '.debug'" for an unreadable `condition:`
 - `condition:` is the only argument, and must be written literally as `.debug`, `.always`, `.custom("CONDITION")`, or `"CONDITION"`; a condition `#if` would reject is a compile-time error, and so is an interpolated literal
 
 ## Requirements

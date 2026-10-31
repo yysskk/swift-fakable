@@ -373,6 +373,11 @@ expands at compile time and cannot read a value computed at run time.
 
 ## Diagnostics and Limitations
 
+Most of the diagnostics below carry a Fix-It, so Xcode offers the repair in one
+click: **Remove '@FakeCase'** or **Remove '@FakeValue'** for a marker that has
+no effect where it is, and **Replace with '.debug'** for a `condition:` the
+macro cannot read.
+
 - `@Fakable` can only be applied to a struct or an enum. Applying it to a class,
   actor, or protocol is a compile-time error reported on the attribute itself. A
   class or actor can still appear in a `@Fakable` model: conform it to
