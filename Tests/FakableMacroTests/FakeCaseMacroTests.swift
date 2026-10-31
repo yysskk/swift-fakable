@@ -117,7 +117,8 @@ struct FakeCaseMacroTests {
                     message: "'@FakeCase' can mark only one case of an enum",
                     line: 5,
                     column: 5,
-                    severity: .error
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Remove '@FakeCase'")]
                 )
             ],
             macros: testMacros
@@ -150,7 +151,8 @@ struct FakeCaseMacroTests {
                     message: "'@FakeCase' marks a single case; declare this case on its own",
                     line: 3,
                     column: 5,
-                    severity: .error
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Remove '@FakeCase'")]
                 )
             ],
             macros: testMacros
@@ -187,7 +189,8 @@ struct FakeCaseMacroTests {
                     message: "'@FakeCase' can only be applied to an enum case",
                     line: 3,
                     column: 5,
-                    severity: .error
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Remove '@FakeCase'")]
                 )
             ],
             macros: testMacros
@@ -213,7 +216,8 @@ struct FakeCaseMacroTests {
                     message: "'@FakeCase' has no effect in an enum that is not '@Fakable'",
                     line: 2,
                     column: 5,
-                    severity: .warning
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeCase'")]
                 )
             ],
             macros: testMacros
@@ -252,7 +256,8 @@ struct FakeCaseMacroTests {
                     message: "'@FakeCase' has no effect on a case declared inside '#if'",
                     line: 5,
                     column: 5,
-                    severity: .warning
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeCase'")]
                 )
             ],
             macros: testMacros

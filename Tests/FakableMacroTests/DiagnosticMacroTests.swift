@@ -265,7 +265,8 @@ struct DiagnosticMacroTests {
                         """,
                     line: 1,
                     column: 1,
-                    severity: .error
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Replace with '.debug'")]
                 )
             ],
             macros: testMacros
@@ -346,7 +347,8 @@ struct DiagnosticMacroTests {
                         """,
                     line: 1,
                     column: 1,
-                    severity: .error
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Replace with '.debug'")]
                 )
             ],
             macros: testMacros

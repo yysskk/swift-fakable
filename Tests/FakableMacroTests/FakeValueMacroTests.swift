@@ -146,7 +146,8 @@ struct FakeValueMacroTests {
                     message: "'@FakeValue' can only be applied to a stored property",
                     line: 4,
                     column: 5,
-                    severity: .error
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Remove '@FakeValue'")]
                 )
             ],
             macros: testMacros
@@ -194,7 +195,8 @@ struct FakeValueMacroTests {
                         """,
                     line: 4,
                     column: 5,
-                    severity: .warning
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeValue'")]
                 ),
                 DiagnosticSpec(
                     message: """
@@ -203,7 +205,8 @@ struct FakeValueMacroTests {
                         """,
                     line: 6,
                     column: 5,
-                    severity: .warning
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeValue'")]
                 ),
                 DiagnosticSpec(
                     message: """
@@ -212,7 +215,8 @@ struct FakeValueMacroTests {
                         """,
                     line: 8,
                     column: 5,
-                    severity: .warning
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeValue'")]
                 ),
             ],
             macros: testMacros
@@ -241,7 +245,8 @@ struct FakeValueMacroTests {
                         """,
                     line: 2,
                     column: 5,
-                    severity: .warning
+                    severity: .warning,
+                    fixIts: [FixItSpec(message: "Remove '@FakeValue'")]
                 )
             ],
             macros: testMacros

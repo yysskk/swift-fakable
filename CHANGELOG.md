@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The diagnostics whose repair needs no guess now carry a Fix-It, so an editor
+  offers it in one click: "Remove '@FakeCase'" and "Remove '@FakeValue'" where
+  a marker has no effect or cannot be used where it is, and "Replace with
+  '.debug'" where `condition:` is not written in a form the macro can read.
 - A `condition:` written as a bare string literal is the `.custom` condition it
   spells, so `@Fakable(condition: "FAKING")` says what
   `@Fakable(condition: .custom("FAKING"))` says.

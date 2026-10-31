@@ -9,6 +9,7 @@ func assertMacroExpansionForTesting(
     expandedSource: String,
     diagnostics: [DiagnosticSpec] = [],
     macros: [String: any Macro.Type],
+    fixedSource: String? = nil,
     conformsTo conformances: [TypeSyntax] = [],
     testModuleName: String = "TestModule",
     testFileName: String = "test.swift",
@@ -26,6 +27,7 @@ func assertMacroExpansionForTesting(
         macroSpecs: macros.mapValues { value in
             MacroSpec(type: value, conformances: conformances)
         },
+        fixedSource: fixedSource,
         testModuleName: testModuleName,
         testFileName: testFileName,
         indentationWidth: indentationWidth

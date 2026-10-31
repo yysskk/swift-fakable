@@ -14,12 +14,12 @@ public struct FakeValueMacro: PeerMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         guard let variable = declaration.as(VariableDeclSyntax.self) else {
-            context.diagnose(Diagnostic(node: node, message: FakableDiagnostic.misplacedFakeValue))
+            context.diagnose(Diagnostic(removing: node, writtenOn: declaration, message: .misplacedFakeValue))
             return []
         }
 
         if !variable.takesFakeParameter || !context.isInsideFakableType {
-            context.diagnose(Diagnostic(node: node, message: FakableDiagnostic.unusedFakeValue))
+            context.diagnose(Diagnostic(removing: node, writtenOn: declaration, message: .unusedFakeValue))
         }
         return []
     }
@@ -40,8 +40,8 @@ extension VariableDeclSyntax {
     /// Whether `fake()` takes a parameter for at least one of the properties
     /// this declaration introduces.
     ///
-    /// Mirrors the rules `FakeGenerator` applies: a type-level, computed, or
-    /// inferred property gets no parameter, and neither does a `let` that
+    /// Mirrors the rules `StructFakeBuilder` applies: a type-level, computed,
+    /// or inferred property gets no parameter, and neither does a `let` that
     /// already has a value.
     fileprivate var takesFakeParameter: Bool {
         guard !isStatic else {

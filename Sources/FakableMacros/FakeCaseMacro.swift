@@ -14,14 +14,14 @@ public struct FakeCaseMacro: PeerMacro {
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
         guard let caseDecl = declaration.as(EnumCaseDeclSyntax.self) else {
-            context.diagnose(Diagnostic(node: node, message: FakableDiagnostic.misplacedFakeCase))
+            context.diagnose(Diagnostic(removing: node, writtenOn: declaration, message: .misplacedFakeCase))
             return []
         }
 
         if caseDecl.elements.count > 1 {
-            context.diagnose(Diagnostic(node: node, message: FakableDiagnostic.ambiguousFakeCase))
+            context.diagnose(Diagnostic(removing: node, writtenOn: declaration, message: .ambiguousFakeCase))
         } else if !context.isInsideFakableType {
-            context.diagnose(Diagnostic(node: node, message: FakableDiagnostic.unusedFakeCase))
+            context.diagnose(Diagnostic(removing: node, writtenOn: declaration, message: .unusedFakeCase))
         }
         return []
     }
