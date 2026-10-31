@@ -54,91 +54,141 @@ enum FakableDiagnostic: DiagnosticMessage, Error {
     case unusedFakeValue
 
     var message: String {
-        switch self {
-        case .unsupportedDeclaration:
-            "'@Fakable' can only be applied to a struct or an enum"
-        case .noStoredProperties:
-            "'@Fakable' generates nothing for a struct with no stored properties"
-        case .memberwiseInitializerUnavailable:
-            """
-            '@Fakable' calls the memberwise initializer, which a struct that \
-            declares an 'init' in its body does not get; move this 'init' to an extension
-            """
-        case .noCases:
-            "'@Fakable' generates nothing for an enum with no cases"
-        case .unwritableAssociatedValue:
-            """
-            '@Fakable' cannot write a value for any case of this enum; \
-            every case carries an associated value with no default, such as a generic or a closure
-            """
-        case .unreadableCondition:
-            """
-            '@Fakable' needs 'condition:' written literally as '.debug', \
-            '.always', '.custom("FLAG")', or "FLAG"
-            """
-        case .invalidCondition(let condition):
-            // Spelled as a literal, so a condition containing a newline is
-            // still reported on one line.
-            "\(String(reflecting: condition)) is not a compilation condition '#if' accepts"
-        case .unwritableFakeCase:
-            """
-            '@FakeCase' marks a case with an associated value that has no default, \
-            such as a generic or a closure
-            """
-        case .duplicateFakeCase:
-            "'@FakeCase' can mark only one case of an enum"
-        case .misplacedFakeCase:
-            "'@FakeCase' can only be applied to an enum case"
-        case .ambiguousFakeCase:
-            "'@FakeCase' marks a single case; declare this case on its own"
-        case .unusedFakeCase:
-            "'@FakeCase' has no effect in an enum that is not '@Fakable'"
-        case .conditionalFakeCase:
-            "'@FakeCase' has no effect on a case declared inside '#if'"
-        case .misplacedFakeValue:
-            "'@FakeValue' can only be applied to a stored property"
-        case .unusedFakeValue:
-            """
-            '@FakeValue' has no effect here; 'fake()' takes no parameter for this \
-            property, or its type is not '@Fakable'
-            """
-        }
+        descriptor.message
     }
 
     var severity: DiagnosticSeverity {
-        switch self {
-        case .noStoredProperties, .noCases, .unusedFakeValue, .unusedFakeCase,
-            .conditionalFakeCase:
-            .warning
-        case .unsupportedDeclaration, .memberwiseInitializerUnavailable,
-            .unwritableAssociatedValue, .unreadableCondition, .invalidCondition,
-            .unwritableFakeCase, .duplicateFakeCase, .misplacedFakeCase, .ambiguousFakeCase,
-            .misplacedFakeValue:
-            .error
-        }
+        descriptor.severity
     }
 
     var diagnosticID: MessageID {
-        MessageID(domain: "FakableMacros", id: identifier)
+        MessageID(domain: "FakableMacros", id: descriptor.id)
     }
 
-    private var identifier: String {
+    /// Everything that tells one diagnostic from another, so a case is
+    /// described in one place rather than once per property.
+    private var descriptor: Descriptor {
         switch self {
-        case .unsupportedDeclaration: "unsupportedDeclaration"
-        case .noStoredProperties: "noStoredProperties"
-        case .memberwiseInitializerUnavailable: "memberwiseInitializerUnavailable"
-        case .noCases: "noCases"
-        case .unwritableAssociatedValue: "unwritableAssociatedValue"
-        case .unreadableCondition: "unreadableCondition"
-        case .invalidCondition: "invalidCondition"
-        case .unwritableFakeCase: "unwritableFakeCase"
-        case .duplicateFakeCase: "duplicateFakeCase"
-        case .misplacedFakeCase: "misplacedFakeCase"
-        case .ambiguousFakeCase: "ambiguousFakeCase"
-        case .unusedFakeCase: "unusedFakeCase"
-        case .conditionalFakeCase: "conditionalFakeCase"
-        case .misplacedFakeValue: "misplacedFakeValue"
-        case .unusedFakeValue: "unusedFakeValue"
+        case .unsupportedDeclaration:
+            Descriptor(
+                id: "unsupportedDeclaration",
+                severity: .error,
+                message: "'@Fakable' can only be applied to a struct or an enum"
+            )
+        case .noStoredProperties:
+            Descriptor(
+                id: "noStoredProperties",
+                severity: .warning,
+                message: "'@Fakable' generates nothing for a struct with no stored properties"
+            )
+        case .memberwiseInitializerUnavailable:
+            Descriptor(
+                id: "memberwiseInitializerUnavailable",
+                severity: .error,
+                message: """
+                    '@Fakable' calls the memberwise initializer, which a struct that \
+                    declares an 'init' in its body does not get; move this 'init' to an extension
+                    """
+            )
+        case .noCases:
+            Descriptor(
+                id: "noCases",
+                severity: .warning,
+                message: "'@Fakable' generates nothing for an enum with no cases"
+            )
+        case .unwritableAssociatedValue:
+            Descriptor(
+                id: "unwritableAssociatedValue",
+                severity: .error,
+                message: """
+                    '@Fakable' cannot write a value for any case of this enum; \
+                    every case carries an associated value with no default, such as a generic or a closure
+                    """
+            )
+        case .unreadableCondition:
+            Descriptor(
+                id: "unreadableCondition",
+                severity: .error,
+                message: """
+                    '@Fakable' needs 'condition:' written literally as '.debug', \
+                    '.always', '.custom("FLAG")', or "FLAG"
+                    """
+            )
+        case .invalidCondition(let condition):
+            Descriptor(
+                id: "invalidCondition",
+                severity: .error,
+                // Spelled as a literal, so a condition containing a newline is
+                // still reported on one line.
+                message: "\(String(reflecting: condition)) is not a compilation condition '#if' accepts"
+            )
+        case .unwritableFakeCase:
+            Descriptor(
+                id: "unwritableFakeCase",
+                severity: .error,
+                message: """
+                    '@FakeCase' marks a case with an associated value that has no default, \
+                    such as a generic or a closure
+                    """
+            )
+        case .duplicateFakeCase:
+            Descriptor(
+                id: "duplicateFakeCase",
+                severity: .error,
+                message: "'@FakeCase' can mark only one case of an enum"
+            )
+        case .misplacedFakeCase:
+            Descriptor(
+                id: "misplacedFakeCase",
+                severity: .error,
+                message: "'@FakeCase' can only be applied to an enum case"
+            )
+        case .ambiguousFakeCase:
+            Descriptor(
+                id: "ambiguousFakeCase",
+                severity: .error,
+                message: "'@FakeCase' marks a single case; declare this case on its own"
+            )
+        case .unusedFakeCase:
+            Descriptor(
+                id: "unusedFakeCase",
+                severity: .warning,
+                message: "'@FakeCase' has no effect in an enum that is not '@Fakable'"
+            )
+        case .conditionalFakeCase:
+            Descriptor(
+                id: "conditionalFakeCase",
+                severity: .warning,
+                message: "'@FakeCase' has no effect on a case declared inside '#if'"
+            )
+        case .misplacedFakeValue:
+            Descriptor(
+                id: "misplacedFakeValue",
+                severity: .error,
+                message: "'@FakeValue' can only be applied to a stored property"
+            )
+        case .unusedFakeValue:
+            Descriptor(
+                id: "unusedFakeValue",
+                severity: .warning,
+                message: """
+                    '@FakeValue' has no effect here; 'fake()' takes no parameter for this \
+                    property, or its type is not '@Fakable'
+                    """
+            )
         }
+    }
+}
+
+extension FakableDiagnostic {
+    /// What one diagnostic is: the id tooling recognises it by, how loudly it
+    /// is reported, and what it says.
+    private struct Descriptor {
+        /// The ``MessageID`` id, which is the case's own name.
+        let id: String
+
+        let severity: DiagnosticSeverity
+
+        let message: String
     }
 }
